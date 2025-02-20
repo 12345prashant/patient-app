@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "429242846393",
+    "firebase_url": "https://caretaker-app-d9a5b-default-rtdb.firebaseio.com",
+    "project_id": "caretaker-app-d9a5b",
+    "storage_bucket": "caretaker-app-d9a5b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:429242846393:android:fd5c9a5da9278cea575f68",
+        "android_client_info": {
+          "package_name": "com.example.caretakerapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDWFuUVd4BwHmnhliwAkmCoitdvruXHKxU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:429242846393:android:8c3d135a54fe703f575f68",
+        "android_client_info": {
+          "package_name": "com.example.patientapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDWFuUVd4BwHmnhliwAkmCoitdvruXHKxU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
