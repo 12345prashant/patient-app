@@ -41,4 +41,8 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
     implementation(platform("com.google.firebase:firebase-bom:33.9.0"))
     implementation("com.google.firebase:firebase-analytics")
+//    implementation("com.github.pedroSG94:rtmp-rtsp-stream-client-java:2.1.3")
+//    implementation("org.webrtc:google-webrtc:1.0.32006")
+    implementation("com.google.firebase:firebase-firestore:25.1.2")
+
 }
