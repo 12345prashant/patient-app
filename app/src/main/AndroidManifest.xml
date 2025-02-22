@@ -33,6 +33,9 @@
         <activity
             android:name=".Dashboard"
             android:exported="true"/>
+        <activity
+            android:name=".SendMessage"
+            android:exported="true"/>
 
 
     </application>
