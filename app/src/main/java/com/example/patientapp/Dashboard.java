@@ -15,7 +15,10 @@ import android.widget.Toast;
 import com.google.firebase.auth.FirebaseAuth;
 
 import androidx.appcompat.app.AppCompatActivity;
-
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import android.util.DisplayMetrics;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -25,51 +28,50 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-
 public class Dashboard extends AppCompatActivity {
 
-
-
-    private ImageButton sendMessage ;
-    private Button logoutbutton;
-    private FirebaseAuth mAuth;
+    private RecyclerView taskRecyclerView;
+    private TaskCardAdapter taskCardAdapter;
+    private List<String> taskList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dashboard);
 
-        sendMessage = findViewById(R.id.imageButton);
-        logoutbutton = findViewById(R.id.button2);
-//         Initialize Firebase Auth
-        mAuth = FirebaseAuth.getInstance();
+        taskRecyclerView = findViewById(R.id.taskRecyclerView);
+        GridLayoutManager layoutManager = new GridLayoutManager(this, 3);
+        taskRecyclerView.setLayoutManager(layoutManager);
 
-        sendMessage.setOnClickListener((v -> opensendmessageactivity()));
-        logoutbutton.setOnClickListener((v-> logoutUser()));
+        // Sample tasks
+        taskList = new ArrayList<>();
+        taskList.add("Drink Water");
+        taskList.add("Washroom");
+        taskList.add("Bedtime");
+        taskList.add("Turn on/off light");
+        taskList.add("Fan");
+        taskList.add("Medicine Reminder");
+        taskList.add("Send Message");
+        taskList.add("Emergency Alert");
 
-
-
-
-
-    }
-    private void opensendmessageactivity(){
-        Intent intent = new Intent(Dashboard.this, SendMessage.class);
-        startActivity(intent);
-        finish();
-    }
-    private void logoutUser() {
-        // Clear the cached email from SharedPreferences
-        SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
-        sharedPreferences.edit().remove("user_email").apply();
-
-        // Sign out from Firebase
-        mAuth.signOut();
-
-        // Redirect to MainActivity (Login screen)
-        Intent intent = new Intent(Dashboard.this, MainActivity.class);
-        startActivity(intent);
-        finish();
+        taskCardAdapter = new TaskCardAdapter(this, taskList);
+        taskRecyclerView.setAdapter(taskCardAdapter);
+        setCardSize();
+        int margin = 8; // You can adjust this value as needed
+        taskRecyclerView.addItemDecoration(new ItemOffsetDecoration(margin));
     }
 
+    private void setCardSize() {
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        int screenHeight = displayMetrics.heightPixels;
+        int screenWidth = displayMetrics.widthPixels;
+        int cardWidth = screenWidth / 3;
+
+        int cardHeight = screenHeight/4;
+
+        taskCardAdapter.setCardSize(cardWidth, cardHeight);
+    }
 }
