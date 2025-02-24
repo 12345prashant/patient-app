@@ -1,4 +1,20 @@
 <resources>
     <string name="app_name">patient app</string>
     <string name="message">Message</string>
+    <string name="settings">Settings</string>
+    <string name="notifications">Notifications</string>
+    <string name="task_title">Task Title</string>
+    <string name="patient">Patient:</string>
+    <string name="enter_caretaker_email">Enter Caretaker Email</string>
+    <string name="add_caretaker">Add Caretaker</string>
+    <string name="logout">Logout</string>
+    <string name="patient_logo">Patient Logo</string>
+    <string name="enter_email">Enter Email</string>
+    <string name="enter_password">Enter Password</string>
+    <string name="login">Login</string>
+    <string name="register">Register</string>
+    <string name="login_as_patient">LOGIN AS PATIENT</string>
+    <string name="registering_first_time_click_register">Registering first time ? Click Register</string>
+    <string name="register_as_patient">Register As Patient</string>
+    <string name="already_a_user">Already a User?</string>
 </resources>
