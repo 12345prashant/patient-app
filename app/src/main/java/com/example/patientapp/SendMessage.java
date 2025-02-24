@@ -64,7 +64,7 @@ public class SendMessage extends AppCompatActivity {
         messageList = new ArrayList<>();
         messageList.add("I need Help");
         messageList.add("I need Help");
-        messageList.add("I need Help");
+        messageList.add("DRINK WATER");
         messageAdapter = new MessageAdapter(this, messageList, this);
         messageRecyclerView.setAdapter(messageAdapter);
 
