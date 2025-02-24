@@ -38,7 +38,7 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageV
         // Handle button click
         holder.messageButton.setOnClickListener(v -> {
             sendMessageActivity.sendMessage(message);
-            Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+//            Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
         });
 
     }
