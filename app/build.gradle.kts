@@ -41,6 +41,13 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
     implementation(platform("com.google.firebase:firebase-bom:33.9.0"))
     implementation("com.google.firebase:firebase-analytics")
+<<<<<<< HEAD
     implementation("androidx.recyclerview:recyclerview:1.2.1")
     implementation("androidx.cardview:cardview:1.0.0")
+=======
+//    implementation("com.github.pedroSG94:rtmp-rtsp-stream-client-java:2.1.3")
+//    implementation("org.webrtc:google-webrtc:1.0.32006")
+    implementation("com.google.firebase:firebase-firestore:25.1.2")
+
+>>>>>>> 66607dfcde96434f1e3400c42cb93c2075c83e93
 }
