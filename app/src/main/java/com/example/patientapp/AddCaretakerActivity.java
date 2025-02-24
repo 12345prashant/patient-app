@@ -21,9 +21,7 @@ import com.google.firebase.database.FirebaseDatabase;
 
 public class AddCaretakerActivity extends AppCompatActivity {
 
-    private TextView patientEmailText;
     private EditText caretakerEmailEditText;
-    private Button addCaretakerButton, logoutButton;
 
     private FirebaseAuth mAuth;
     private DatabaseReference databaseReference;
@@ -40,10 +38,10 @@ public class AddCaretakerActivity extends AppCompatActivity {
         FirebaseUser currentUser = mAuth.getCurrentUser();
 
         // Initialize UI elements
-        patientEmailText = findViewById(R.id.patientEmailText);
+        TextView patientEmailText = findViewById(R.id.patientEmailText);
         caretakerEmailEditText = findViewById(R.id.caretakerEmailEditText);
-        addCaretakerButton = findViewById(R.id.addCaretakerButton);
-        logoutButton = findViewById(R.id.button3);
+        Button addCaretakerButton = (Button)findViewById(R.id.addCaretakerButton);
+        Button logoutButton = (Button)findViewById(R.id.button3);
 
         // Initialize SharedPreferences
         sharedPreferences = getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
@@ -51,7 +49,8 @@ public class AddCaretakerActivity extends AppCompatActivity {
         // Get current patient email
         if (currentUser != null) {
             patientEmail = currentUser.getEmail();
-            patientEmailText.setText("Patient: " + patientEmail);
+            String s = "Patient: " + patientEmail;
+            patientEmailText.setText(s);
         } else {
             Toast.makeText(this, "User not logged in!", Toast.LENGTH_SHORT).show();
             finish();

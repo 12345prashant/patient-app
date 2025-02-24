@@ -59,8 +59,8 @@ public class Dashboard extends AppCompatActivity {
         taskCardAdapter = new TaskCardAdapter(this, taskList);
         taskRecyclerView.setAdapter(taskCardAdapter);
         setCardSize();
-        int margin = 8; // You can adjust this value as needed
-        taskRecyclerView.addItemDecoration(new ItemOffsetDecoration(margin));
+//        int margin = 8; // You can adjust this value as needed
+//        taskRecyclerView.addItemDecoration(new ItemOffsetDecoration(margin));
     }
 
     private void setCardSize() {
