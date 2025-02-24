@@ -82,10 +82,12 @@ public class SendMessage extends AppCompatActivity {
             if (!task.isSuccessful()) {
                 Toast.makeText(SendMessage.this, "Failed to send message", Toast.LENGTH_SHORT).show();
             } else {
+                Toast.makeText(SendMessage.this, "Message sent", Toast.LENGTH_SHORT).show();
+
                 // Add the message to the list and notify the adapter
-                messageList.add(messageText);
-                messageAdapter.notifyItemInserted(messageList.size() - 1);
-                messageRecyclerView.scrollToPosition(messageList.size() - 1);
+//                messageList.add(messageText);
+//                messageAdapter.notifyItemInserted(messageList.size() - 1);
+//                messageRecyclerView.scrollToPosition(messageList.size() - 1);
             }
         });
     }
