@@ -11,6 +11,8 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.AuthResult;
@@ -19,6 +21,9 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import android.content.pm.PackageManager;
+import android.Manifest;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -27,11 +32,16 @@ public class MainActivity extends AppCompatActivity {
     private FirebaseAuth mAuth;
     private DatabaseReference databaseReference;
     private SharedPreferences sharedPreferences;
+    private LiveStreamService liveStreamService;
+    private static final int PERMISSION_REQUEST_CODE = 101;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+
+//        liveStreamService = new LiveStreamService(this);
 
         // Initialize Firebase
         mAuth = FirebaseAuth.getInstance();
@@ -45,8 +55,10 @@ public class MainActivity extends AppCompatActivity {
 
         // Auto-login if email is cached
         if (cachedEmail != null) {
+
             if (caretakerEmail != null) {
                 startActivity(new Intent(MainActivity.this, Dashboard.class));
+
             } else {
                 startActivity(new Intent(MainActivity.this, AddCaretakerActivity.class));
             }
@@ -78,6 +90,9 @@ public class MainActivity extends AppCompatActivity {
             finish();
         });
     }
+
+
+
 
     // Function to handle user login
     private void loginUser(String email, String password) {
@@ -113,4 +128,5 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
     }
+
 }

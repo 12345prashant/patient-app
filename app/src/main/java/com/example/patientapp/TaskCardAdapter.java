@@ -2,6 +2,7 @@ package com.example.patientapp;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Rect;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,7 +12,13 @@ import android.widget.Toast;
 
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class TaskCardAdapter extends RecyclerView.Adapter<TaskCardAdapter.ViewHolder> {
 
@@ -50,7 +57,14 @@ public class TaskCardAdapter extends RecyclerView.Adapter<TaskCardAdapter.ViewHo
         holder.itemView.setOnClickListener(v -> {
             // Show Toast with the content of the clicked card (task name)
             String taskName = tasks.get(position);
+            if (taskName.equals("Emergency Alert")) {
+                sendEmergencyAlert();
+            } else {
+                Toast.makeText(context, taskName, Toast.LENGTH_SHORT).show();
+            }
             Toast.makeText(context, taskName, Toast.LENGTH_SHORT).show();
+
+
 
             Intent intent = null;
 
@@ -73,6 +87,31 @@ public class TaskCardAdapter extends RecyclerView.Adapter<TaskCardAdapter.ViewHo
                 context.startActivity(intent);
             }
         });
+    }
+
+    // Function to send an emergency alert to Firebase
+    private void sendEmergencyAlert() {
+        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference("emergency_alerts");
+
+        // Get patient email from SharedPreferences
+        SharedPreferences sharedPreferences = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+        String patientEmail = sharedPreferences.getString("user_email", null);
+
+        if (patientEmail == null) {
+            Toast.makeText(context, "User email not found!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Replace "." with "," since Firebase keys can't have dots
+        String patientKey = patientEmail.replace(".", "_");
+
+        Map<String, Object> alertData = new HashMap<>();
+        alertData.put("patientId", patientKey);
+        alertData.put("timestamp", System.currentTimeMillis());
+
+        databaseReference.child(patientKey).setValue(alertData)
+                .addOnSuccessListener(aVoid -> Toast.makeText(context, "Emergency Alert Sent!", Toast.LENGTH_SHORT).show())
+                .addOnFailureListener(e -> Toast.makeText(context, "Failed to send alert", Toast.LENGTH_SHORT).show());
     }
 
     @Override

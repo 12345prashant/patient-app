@@ -1,13 +1,13 @@
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-<<<<<<< HEAD
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/parentLayout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
 
     <!-- Top bar with icons -->
-
-    <!-- RecyclerView for task grid -->
     <LinearLayout
         android:id="@+id/topBar"
         android:layout_width="wrap_content"
@@ -16,13 +16,10 @@
         android:orientation="horizontal"
         android:padding="8dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
         <!-- Notification Icon -->
-
-        <!-- Settings Icon -->
         <ImageView
             android:id="@+id/ivNotifications"
             android:layout_width="50dp"
@@ -31,6 +28,7 @@
             android:src="@drawable/ic_notifications"
             android:contentDescription="@string/notifications" />
 
+        <!-- Settings Icon -->
         <ImageView
             android:id="@+id/ivSettings"
             android:layout_width="50dp"
@@ -39,46 +37,42 @@
             android:contentDescription="@string/settings" />
     </LinearLayout>
 
+    <!-- RecyclerView for task grid -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/taskRecyclerView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:paddingTop="60dp"
-    app:layout_constraintTop_toBottomOf="@+id/topBar"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintEnd_toEndOf="parent"
-    app:layout_constraintBottom_toBottomOf="parent"/>
+        app:layout_constraintTop_toBottomOf="@id/topBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"/>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
-=======
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
+    <!-- Floating Button -->
     <ImageButton
         android:id="@+id/imageButton"
         android:layout_width="108dp"
         android:layout_height="84dp"
-        android:layout_marginBottom="112dp"
-        app:layout_constraintBottom_toTopOf="@+id/textView4"
+        android:layout_marginBottom="20dp"
+        app:layout_constraintBottom_toTopOf="@id/textView4"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.052"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="1.0"
+        app:layout_constraintHorizontal_bias="0.5"
         app:srcCompat="@android:drawable/btn_star_big_on" />
 
+    <!-- Label for caretaker message -->
     <TextView
         android:id="@+id/textView4"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="572dp"
         android:text="Send message to caretaker"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.029"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        android:layout_marginBottom="50dp"/>
 
+    <!-- Logout Button -->
     <Button
         android:id="@+id/button2"
         android:layout_width="wrap_content"
@@ -86,9 +80,8 @@
         android:text="Logout"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.812"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.06" />
+        app:layout_constraintHorizontal_bias="0.5"
+        android:layout_marginBottom="20dp"/>
+
 </androidx.constraintlayout.widget.ConstraintLayout>
->>>>>>> 66607dfcde96434f1e3400c42cb93c2075c83e93

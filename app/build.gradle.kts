@@ -43,8 +43,12 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
     implementation("androidx.recyclerview:recyclerview:1.2.1")
     implementation("androidx.cardview:cardview:1.0.0")
-//    implementation("com.github.pedroSG94:rtmp-rtsp-stream-client-java:2.1.3")
-//    implementation("org.webrtc:google-webrtc:1.0.32006")
+
     implementation("com.google.firebase:firebase-firestore:25.1.2")
+    implementation("androidx.camera:camera-core:1.3.0")
+    implementation("androidx.camera:camera-lifecycle:1.3.0")
+    implementation("androidx.camera:camera-view:1.3.0")
+    implementation("com.google.firebase:firebase-storage:20.2.1")
+
 
 }
