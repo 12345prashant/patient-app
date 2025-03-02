@@ -43,4 +43,5 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
     implementation("androidx.recyclerview:recyclerview:1.2.1")
     implementation("androidx.cardview:cardview:1.0.0")
+    implementation("org.opencv:opencv:4.9.0")
 }
