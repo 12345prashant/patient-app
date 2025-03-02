@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import androidx.annotation.NonNull;
 import com.google.firebase.database.DatabaseError;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -61,7 +62,36 @@ public class Dashboard extends AppCompatActivity {
         setCardSize();
 //        int margin = 8; // You can adjust this value as needed
 //        taskRecyclerView.addItemDecoration(new ItemOffsetDecoration(margin));
+        startHighlightingTasks();
     }
+
+    private void startHighlightingTasks() {
+        final Handler handler = new Handler();
+        final int delay = 3000; // 3 seconds delay
+
+        Runnable taskHighlightRunnable = new Runnable() {
+            int currentTaskIndex = 0;
+
+            @Override
+            public void run() {
+                // Highlight the current task
+                taskCardAdapter.highlightTask(currentTaskIndex);
+
+                // Move to the next task
+                currentTaskIndex++;
+                if (currentTaskIndex >= taskList.size()) {
+                    currentTaskIndex = 0; // Reset to loop infinitely
+                }
+
+                // Post the runnable again after delay
+                handler.postDelayed(this, delay);
+            }
+        };
+
+        handler.postDelayed(taskHighlightRunnable, delay);
+    }
+
+
 
     private void setCardSize() {
         DisplayMetrics displayMetrics = new DisplayMetrics();

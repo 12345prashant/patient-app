@@ -2,6 +2,7 @@ package com.example.patientapp;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.graphics.Rect;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,7 +20,7 @@ public class TaskCardAdapter extends RecyclerView.Adapter<TaskCardAdapter.ViewHo
     private List<String> tasks;
     private int cardWidth;
     private int cardHeight;
-
+    private int highlightedPosition = -1;
     public TaskCardAdapter(Context context, List<String> tasks) {
         this.context = context;
         this.tasks = tasks;
@@ -29,6 +30,10 @@ public class TaskCardAdapter extends RecyclerView.Adapter<TaskCardAdapter.ViewHo
     public void setCardSize(int width, int height) {
         this.cardWidth = width;
         this.cardHeight = height;
+    }
+    public void highlightTask(int position) {
+        this.highlightedPosition = position;
+        notifyDataSetChanged(); // Notify adapter to refresh the views
     }
 
     @Override
@@ -47,6 +52,12 @@ public class TaskCardAdapter extends RecyclerView.Adapter<TaskCardAdapter.ViewHo
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
         holder.taskTitle.setText(tasks.get(position));
+        if (position == highlightedPosition) {
+            holder.itemView.setBackgroundColor(Color.YELLOW); // Highlight color
+        } else {
+            holder.itemView.setBackgroundColor(Color.TRANSPARENT); // No highlight
+        }
+
         holder.itemView.setOnClickListener(v -> {
             // Show Toast with the content of the clicked card (task name)
             String taskName = tasks.get(position);
