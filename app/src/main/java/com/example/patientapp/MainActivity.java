@@ -1,9 +1,13 @@
 package com.example.patientapp;
 
+import android.Manifest;
+
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -11,6 +15,8 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.AuthResult;
@@ -20,6 +26,8 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 
+import org.opencv.android.OpenCVLoader;
+
 public class MainActivity extends AppCompatActivity {
 
     private EditText emailEditText, passwordEditText;
@@ -27,11 +35,26 @@ public class MainActivity extends AppCompatActivity {
     private FirebaseAuth mAuth;
     private DatabaseReference databaseReference;
     private SharedPreferences sharedPreferences;
-
+    private static final String TAG = "OCVSample::Activity";
+    private static final int CAMERA_PERMISSION_REQUEST_CODE = 1001;
+//    public static final String CAMERA;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        if (OpenCVLoader.initLocal()) {
+            Log.i(TAG, "OpenCV loaded successfully");
+            Toast.makeText(this, "OpenCV initializated", Toast.LENGTH_LONG).show();
+
+        } else {
+            Log.e(TAG, "OpenCV initialization failed!");
+            Toast.makeText(this, "OpenCV initialization failed!", Toast.LENGTH_LONG).show();
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA ) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA }, CAMERA_PERMISSION_REQUEST_CODE);
+        }
+
+
 
         // Initialize Firebase
         mAuth = FirebaseAuth.getInstance();
@@ -112,5 +135,18 @@ public class MainActivity extends AppCompatActivity {
                         Toast.makeText(MainActivity.this, "Error fetching caretaker data", Toast.LENGTH_SHORT).show();
                     }
                 });
+    }
+
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == CAMERA_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "Camera permission Granted.", Toast.LENGTH_LONG).show();
+
+            } else {
+                // Permission denied, inform the user
+                Toast.makeText(this, "Camera permission is required to use the camera.", Toast.LENGTH_LONG).show();
+            }
+        }
     }
 }
