@@ -59,7 +59,10 @@ public class TaskCardAdapter extends RecyclerView.Adapter<TaskCardAdapter.ViewHo
             String taskName = tasks.get(position);
             if (taskName.equals("Emergency Alert")) {
                 sendEmergencyAlert();
-            } else {
+            } else if (taskName.equals("Drink Water") || taskName.equals("Washroom")) {
+                sendMessageToCaretaker(taskName);
+            }
+            else {
                 Toast.makeText(context, taskName, Toast.LENGTH_SHORT).show();
             }
             Toast.makeText(context, taskName, Toast.LENGTH_SHORT).show();
@@ -88,6 +91,37 @@ public class TaskCardAdapter extends RecyclerView.Adapter<TaskCardAdapter.ViewHo
             }
         });
     }
+    private void sendMessageToCaretaker(String messageText) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+        String patientEmail = sharedPreferences.getString("user_email", null);
+        String caretakerEmail = sharedPreferences.getString("caretaker_email", null);
+
+        if (patientEmail == null || caretakerEmail == null) {
+            Toast.makeText(context, "User or caretaker email not found!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String patientKey = patientEmail.replace(".", "_");
+        String caretakerKey = caretakerEmail.replace(".", "_");
+        String chatRoomId = caretakerKey + "_" + patientKey;
+
+        DatabaseReference messagesDatabase = FirebaseDatabase.getInstance().getReference("messages").child(chatRoomId);
+
+        Map<String, Object> messageData = new HashMap<>();
+        messageData.put("sender", "patient");
+        messageData.put("receiver", "caretaker");
+        messageData.put("text", messageText);
+        messageData.put("timestamp", System.currentTimeMillis());
+
+        messagesDatabase.push().setValue(messageData).addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                Toast.makeText(context, "Message sent: " + messageText, Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(context, "Failed to send message", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
 
     // Function to send an emergency alert to Firebase
     private void sendEmergencyAlert() {

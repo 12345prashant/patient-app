@@ -49,6 +49,7 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:1.3.0")
     implementation("androidx.camera:camera-view:1.3.0")
     implementation("com.google.firebase:firebase-storage:20.2.1")
+    implementation("org.webrtc:google-webrtc:1.0.30039@aar")
 
 
 }

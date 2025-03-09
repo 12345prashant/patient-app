@@ -92,26 +92,26 @@ public class SendMessage extends AppCompatActivity {
         });
     }
 
-//    private void loadMessages() {
-//        messagesDatabase.addValueEventListener(new ValueEventListener() {
-//            @Override
-//            public void onDataChange(DataSnapshot dataSnapshot) {
-//                messageList.clear();
-//                for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-//                    String sender = snapshot.child("sender").getValue(String.class);
-//                    String text = snapshot.child("text").getValue(String.class);
-//
-//                    if (sender != null && text != null && sender.equals("caretaker")) {
-//                        messageList.add("Caretaker: " + text);
-//                    }
-//                }
-//                messageAdapter.notifyDataSetChanged();
-//            }
-//
-//            @Override
-//            public void onCancelled(DatabaseError databaseError) {
-//                Toast.makeText(SendMessage.this, "Failed to load messages: " + databaseError.getMessage(), Toast.LENGTH_SHORT).show();
-//            }
-//        });
-//    }
+    private void loadMessages() {
+        messagesDatabase.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                messageList.clear();
+                for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                    String sender = snapshot.child("sender").getValue(String.class);
+                    String text = snapshot.child("text").getValue(String.class);
+
+                    if (sender != null && text != null && sender.equals("caretaker")) {
+                        messageList.add("Caretaker: " + text);
+                    }
+                }
+                messageAdapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                Toast.makeText(SendMessage.this, "Failed to load messages: " + databaseError.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
 }

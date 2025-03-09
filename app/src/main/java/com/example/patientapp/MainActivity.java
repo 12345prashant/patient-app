@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -52,6 +53,8 @@ public class MainActivity extends AppCompatActivity {
 
         String cachedEmail = sharedPreferences.getString("user_email", null);
         String caretakerEmail = sharedPreferences.getString("caretaker_email", null);
+//        assert caretakerEmail != null;
+//        Log.e("hehe", caretakerEmail);
 
         // Auto-login if email is cached
         if (cachedEmail != null) {
@@ -96,11 +99,19 @@ public class MainActivity extends AppCompatActivity {
 
     // Function to handle user login
     private void loginUser(String email, String password) {
+        String caretakerEmail = sharedPreferences.getString("caretaker_email", null);
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
                         sharedPreferences.edit().putString("user_email", email).apply();
-                        checkPatientCaretaker(email);
+//                        checkPatientCaretaker(email);
+                        if (caretakerEmail != null) {
+                            startActivity(new Intent(MainActivity.this, Dashboard.class));
+                            finish();
+
+                        } else {
+                            startActivity(new Intent(MainActivity.this, AddCaretakerActivity.class));
+                        }
                     } else {
                         Toast.makeText(MainActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
                     }
