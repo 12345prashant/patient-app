@@ -98,4 +98,30 @@ public class Dashboard extends AppCompatActivity {
 
         taskCardAdapter.setCardSize(cardWidth, cardHeight);
     }
+    private void startHighlightingTasks() {
+        final Handler handler = new Handler();
+        final int delay = 3000; // 3 seconds delay
+
+        Runnable taskHighlightRunnable = new Runnable() {
+            int currentTaskIndex = 0;
+
+            @Override
+            public void run() {
+                // Highlight the current task
+                taskCardAdapter.highlightTask(currentTaskIndex);
+
+                // Move to the next task
+                currentTaskIndex++;
+                if (currentTaskIndex >= taskList.size()) {
+                    currentTaskIndex = 0; // Reset to loop infinitely
+                }
+
+                // Post the runnable again after delay
+                handler.postDelayed(this, delay);
+            }
+        };
+
+        handler.postDelayed(taskHighlightRunnable, delay);
+    }
+
 }
