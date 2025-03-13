@@ -35,6 +35,9 @@ public class TaskCardAdapter extends RecyclerView.Adapter<TaskCardAdapter.ViewHo
         this.highlightedPosition = position;
         notifyDataSetChanged(); // Notify adapter to refresh the views
     }
+    public int getHighlightedPosition(){
+        return highlightedPosition;
+    }
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -60,7 +63,36 @@ public class TaskCardAdapter extends RecyclerView.Adapter<TaskCardAdapter.ViewHo
 
         holder.itemView.setOnClickListener(v -> {
             // Show Toast with the content of the clicked card (task name)
-            String taskName = tasks.get(position);
+
+            performTaskAction(position);
+
+//            String taskName = tasks.get(position);
+//            Toast.makeText(context, taskName, Toast.LENGTH_SHORT).show();
+//
+//            Intent intent = null;
+//
+//            switch (taskName) {
+//                case "Send Message":
+//                    intent = new Intent(context, SendMessage.class);
+//                    break;
+////                case "Drink Water":
+////                    // Example for another task
+////                    intent = new Intent(context, DrinkWater.class);
+////                    break;
+////                case "Washroom":
+////                    intent = new Intent(context, Washroom.class);
+////                    break;
+//                // Add more cases for other tasks here...
+//                default:
+//                    break;
+//            }
+//            if (intent != null) {
+//                context.startActivity(intent);
+//            }
+        });
+    }
+    public void performTaskAction(int position) {
+        String taskName = tasks.get(position);
             Toast.makeText(context, taskName, Toast.LENGTH_SHORT).show();
 
             Intent intent = null;
@@ -83,7 +115,6 @@ public class TaskCardAdapter extends RecyclerView.Adapter<TaskCardAdapter.ViewHo
             if (intent != null) {
                 context.startActivity(intent);
             }
-        });
     }
 
     @Override
@@ -100,20 +131,29 @@ public class TaskCardAdapter extends RecyclerView.Adapter<TaskCardAdapter.ViewHo
         }
     }
 }
-class ItemOffsetDecoration extends RecyclerView.ItemDecoration {
 
-    private int mItemOffset;
 
-    public ItemOffsetDecoration(int itemOffset) {
-        mItemOffset = itemOffset;
-    }
 
-    @Override
-    public void getItemOffsets(Rect outRect, View view, RecyclerView parent, RecyclerView.State state) {
-        super.getItemOffsets(outRect, view, parent, state);
-        outRect.left = mItemOffset;
-        outRect.right = mItemOffset;
-        outRect.top = mItemOffset;
-        outRect.bottom = mItemOffset;
-    }
-}
+
+
+
+
+
+
+//class ItemOffsetDecoration extends RecyclerView.ItemDecoration {
+//
+//    private int mItemOffset;
+//
+//    public ItemOffsetDecoration(int itemOffset) {
+//        mItemOffset = itemOffset;
+//    }
+//
+//    @Override
+//    public void getItemOffsets(Rect outRect, View view, RecyclerView parent, RecyclerView.State state) {
+//        super.getItemOffsets(outRect, view, parent, state);
+//        outRect.left = mItemOffset;
+//        outRect.right = mItemOffset;
+//        outRect.top = mItemOffset;
+//        outRect.bottom = mItemOffset;
+//    }
+//}
