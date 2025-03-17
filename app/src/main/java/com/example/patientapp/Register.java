@@ -39,8 +39,8 @@ public class Register extends AppCompatActivity {
         sharedPreferences = getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
 
         // Bind UI elements
-        emailEditText = findViewById(R.id.emailEditText);
-        passwordEditText = findViewById(R.id.passwordEditText);
+        emailEditText = findViewById(R.id.email);
+        passwordEditText = findViewById(R.id.password);
         registerButton = findViewById(R.id.registerButton);
         loginButton = findViewById(R.id.loginButton);
 
