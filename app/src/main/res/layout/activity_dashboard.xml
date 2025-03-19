@@ -17,9 +17,9 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="@android:color/transparent"
-            app:title="Welcome"
             app:titleTextAppearance="@style/TextAppearance.PatientApp.Headline2"
-            app:titleTextColor="@color/text_primary" />
+            app:titleTextColor="@color/text_primary"
+            app:menu="@menu/dashboard_menu" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -299,6 +299,13 @@
                         android:layout_marginStart="16dp"
                         android:text="Video Call"
                         android:textAppearance="@style/TextAppearance.PatientApp.Headline2" />
+
+                    <TextView
+                        android:id="@+id/msg"
+                        android:layout_width="100dp"
+                        android:layout_height="100dp"
+                        />
+
                 </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>

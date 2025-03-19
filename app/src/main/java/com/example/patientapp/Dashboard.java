@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Menu;
 import android.view.View;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
@@ -29,7 +30,9 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -38,9 +41,8 @@ public class Dashboard extends AppCompatActivity {
     private SharedPreferences sharedPreferences;
     private FirebaseAuth mAuth;
 
-    private TextView latestMessage;
+    private TextView latestMessage, msg;
     private DatabaseReference messagesRef;
-//    private LinearLayout messageContainer;
     private ImageView notificationIcon;
     private Handler handler = new Handler();
 
@@ -101,8 +103,14 @@ public class Dashboard extends AppCompatActivity {
 
         // Initialize message views with new IDs
         latestMessage = findViewById(R.id.message);
-        messageContainer = findViewById(R.id.message_container);
         notificationIcon = findViewById(R.id.notification_icon);
+        msg = findViewById(R.id.msg);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.dashboard_menu, menu);
+        return true;
     }
 
     private void setupAnimations() {
@@ -149,7 +157,7 @@ public class Dashboard extends AppCompatActivity {
             }
 
             if (!request.isEmpty()) {
-                sendRequestToCaretaker(request);
+                sendRequestToCaretaker(getApplicationContext(), request);
             }
         };
 
@@ -171,6 +179,10 @@ public class Dashboard extends AppCompatActivity {
         if (!caretakerEmail.isEmpty() && !patientEmail.isEmpty()) {
             String messageKey = caretakerEmail + "_" + patientEmail;
             messagesRef = FirebaseDatabase.getInstance().getReference("messages").child(messageKey);
+
+            messageContainer = findViewById(R.id.message_container);
+            messageContainer.setVisibility(View.GONE);
+
         }
     }
 
@@ -182,18 +194,35 @@ public class Dashboard extends AppCompatActivity {
         });
     }
 
-    private void sendRequestToCaretaker(String request) {
-        if (messagesRef != null) {
-            String timestamp = String.valueOf(System.currentTimeMillis());
-            Map<String, Object> message = new HashMap<>();
-            message.put("sender", "patient");
-            message.put("text", "I need " + request);
-            message.put("timestamp", timestamp);
+    private void sendRequestToCaretaker(Context context, String request) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+        String patientEmail = sharedPreferences.getString("user_email", null);
+        String caretakerEmail = sharedPreferences.getString("caretaker_email", null);
 
-            messagesRef.child(timestamp).setValue(message)
-                    .addOnSuccessListener(aVoid -> showSuccessMessage("Request sent: " + request))
-                    .addOnFailureListener(e -> showErrorMessage("Failed to send request"));
+        if (patientEmail == null || caretakerEmail == null) {
+            Toast.makeText(context, "User or caretaker email not found!", Toast.LENGTH_SHORT).show();
+            return;
         }
+
+        String patientKey = patientEmail.replace(".", "_");
+        String caretakerKey = caretakerEmail.replace(".", "_");
+        String chatRoomId = caretakerKey + "_" + patientKey;
+
+        DatabaseReference messagesDatabase = FirebaseDatabase.getInstance().getReference("messages").child(chatRoomId);
+
+        Map<String, Object> messageData = new HashMap<>();
+        messageData.put("sender", "patient");
+        messageData.put("receiver", "caretaker");
+        messageData.put("text", request);
+        messageData.put("timestamp", System.currentTimeMillis());
+
+        messagesDatabase.push().setValue(messageData).addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                Toast.makeText(context, "Message sent: " + request, Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(context, "Failed to send message", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void sendEmergencyAlert() {
@@ -238,29 +267,59 @@ public class Dashboard extends AppCompatActivity {
     }
 
     private void listenForMessages() {
-        messagesRef.orderByChild("timestamp").limitToLast(10)
+        // Ensure messagesRef is correctly initialized
+        if (messagesRef == null) {
+            Log.e("Firebase", "messagesRef is null. Check Firebase initialization.");
+            return;
+        }
+
+        // Fetch the last 10 messages and filter caretaker messages
+        messagesRef.orderByChild("timestamp")
                 .addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        List<String> caretakerMessages = new ArrayList<>();
                         String latestCaretakerMessage = "";
+
+                        // Log the total number of messages fetched
+                        Log.d("Firebase", "Total messages fetched: " + snapshot.getChildrenCount());
+
                         for (DataSnapshot msgSnapshot : snapshot.getChildren()) {
+                            // Parse sender and text from the snapshot
                             String sender = msgSnapshot.child("sender").getValue(String.class);
                             String text = msgSnapshot.child("text").getValue(String.class);
 
+                            // Log each message for debugging
+                            Log.d("Firebase", "Sender: " + sender + ", Text: " + text);
+
                             // Only process messages sent by caretaker
-                            if ("caretaker".equals(sender) && text != null) {
+                            if (sender.equals("caretaker") && text != null) {
+                                caretakerMessages.add(text);
                                 latestCaretakerMessage = text;
                             }
                         }
 
-                        // Update UI with latest message
-                        if (!latestCaretakerMessage.isEmpty()) {
-                            latestMessage.setText(latestCaretakerMessage);
+                        // Log the number of caretaker messages found
+                        Log.d("Firebase", "Caretaker messages found: " + caretakerMessages.size());
+
+                        // Update UI with the latest caretaker message
+                        if (!caretakerMessages.isEmpty()) {
+                            String finalLatestCaretakerMessage = latestCaretakerMessage;
+                            runOnUiThread(() -> {
+                                // Display the latest caretaker message
+                                latestMessage.setText(finalLatestCaretakerMessage);
+
+                                // Show the notification container
+                                if (!finalLatestCaretakerMessage.equals(lastSpokenMessage)) showNotification();
+                            });
+
+                            // Speak only if the latest caretaker message is NEW
                             if (!latestCaretakerMessage.equals(lastSpokenMessage)) {
                                 speakMessage("caretaker", latestCaretakerMessage);
-                                lastSpokenMessage = latestCaretakerMessage;
-                                showNotification();
+                                lastSpokenMessage = latestCaretakerMessage; // Update last spoken message
                             }
+                        } else {
+                            Log.d("Firebase", "No caretaker messages found.");
                         }
                     }
 
@@ -274,7 +333,7 @@ public class Dashboard extends AppCompatActivity {
     private void showNotification() {
         messageContainer.setVisibility(View.VISIBLE);
         // Hide after 5 seconds
-        handler.postDelayed(() -> messageContainer.setVisibility(View.GONE), 5000);
+        handler.postDelayed(() -> messageContainer.setVisibility(View.GONE), 10000);
     }
 
     private void speakMessage(String sender, String message) {
