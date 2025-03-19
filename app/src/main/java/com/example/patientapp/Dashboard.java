@@ -19,6 +19,7 @@ import android.speech.tts.TextToSpeech;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.core.widget.NestedScrollView;
 
 import com.google.android.material.appbar.MaterialToolbar;
@@ -56,6 +57,11 @@ public class Dashboard extends AppCompatActivity {
     private NestedScrollView scrollView;
     private MaterialToolbar toolbar;
 
+    private List<MaterialCardView> cards;
+
+
+    private int currentIndex = 0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -91,7 +97,7 @@ public class Dashboard extends AppCompatActivity {
         scrollView = findViewById(R.id.scrollView);
 
         // Set background animation
-        View rootView = findViewById(android.R.id.content);
+        View rootView = findViewById(R.id.coordinatorLayout);
         rootView.setBackgroundResource(R.drawable.gradient_background);
         animatedBackground = (AnimationDrawable) rootView.getBackground();
         
@@ -103,6 +109,19 @@ public class Dashboard extends AppCompatActivity {
             }
             return false;
         });
+
+        handler = new Handler();
+
+        // Initialize the list..
+        cards = new ArrayList<>();
+        cards.add(emergencyCard);
+        cards.add(waterRequestCard);
+        cards.add(foodRequestCard);
+        cards.add(bathroomRequestCard);
+        cards.add(homeControlCard);
+        cards.add(videoCallCard);
+
+        handler.post(highlightRunnable);
 
         // Initialize message views with new IDs
         latestMessage = findViewById(R.id.message);
@@ -133,6 +152,7 @@ public class Dashboard extends AppCompatActivity {
         new Handler().postDelayed(() -> bathroomRequestCard.startAnimation(slideUp), 400);
         new Handler().postDelayed(() -> homeControlCard.startAnimation(slideUp), 500);
         new Handler().postDelayed(() -> videoCallCard.startAnimation(fadeIn), 600);
+
     }
 
     private void setupClickListeners() {
@@ -340,7 +360,7 @@ public class Dashboard extends AppCompatActivity {
     private void showNotification() {
         messageContainer.setVisibility(View.VISIBLE);
         // Hide after 5 seconds
-        handler.postDelayed(() -> messageContainer.setVisibility(View.GONE), 10000);
+        handler.postDelayed(() -> messageContainer.setVisibility(View.GONE), 5000);
     }
 
     private void speakMessage(String sender, String message) {
@@ -382,5 +402,40 @@ public class Dashboard extends AppCompatActivity {
     }
 
 
+    private void highlightCard(MaterialCardView card, boolean highlight) {
+        if (highlight) {
+            // Highlight the card (e.g., change background color or stroke color)
+            card.setCardBackgroundColor(ContextCompat.getColor(this, R.color.warning)); // Use a highlight color
+            card.setStrokeWidth(4); // Add a border
+            card.setStrokeColor(ContextCompat.getColor(this, R.color.warning)); // Use a stroke color
+        } else {
+            // Reset the card to its original state
+            card.setCardBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Use the default card color
+            card.setStrokeWidth(0); // Remove the border
+        }
+    }
+
+    private Runnable highlightRunnable = new Runnable() {
+        @Override
+        public void run() {
+            // Reset all cards to their default state
+            resetAllCards(cards);
+
+            // Highlight the current card
+            highlightCard(cards.get(currentIndex), true);
+
+            // Move to the next card
+            currentIndex = (currentIndex + 1) % cards.size();
+
+            // Repeat after a delay (e.g., 2 seconds)
+            handler.postDelayed(this, 2000); // 2000ms = 2 seconds
+        }
+    };
+
+    private void resetAllCards(List<MaterialCardView> cards) {
+        for (MaterialCardView card : cards) {
+            highlightCard(card, false);
+        }
+    }
 }
 

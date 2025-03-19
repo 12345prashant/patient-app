@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:id="@+id/coordinatorLayout"
     android:background="@color/background">
 
     <com.google.android.material.appbar.AppBarLayout
@@ -108,7 +109,7 @@
                         android:layout_gravity="center_vertical"
                         android:layout_marginStart="16dp"
                         android:text="Emergency Help"
-                        android:textColor="@color/white"
+                        android:textColor="@color/gray"
                         android:textSize="24sp"
                         android:textStyle="bold" />
                 </LinearLayout>
