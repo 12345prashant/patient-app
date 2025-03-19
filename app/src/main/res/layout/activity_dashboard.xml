@@ -115,7 +115,6 @@
 
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Service Request Grid -->
             <androidx.gridlayout.widget.GridLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
