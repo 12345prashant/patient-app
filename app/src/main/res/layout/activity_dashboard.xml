@@ -232,9 +232,9 @@
 
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Medicine Request -->
+                <!-- Light/Fan Control -->
                 <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/medicineRequestCard"
+                    android:id="@+id/homeControlCard"
                     style="@style/Widget.PatientApp.Card"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -261,7 +261,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
-                            android:text="Medicine"
+                            android:text="Control Light/Fan"
                             android:textAppearance="@style/TextAppearance.PatientApp.Body1"
                             android:textStyle="bold" />
                     </LinearLayout>

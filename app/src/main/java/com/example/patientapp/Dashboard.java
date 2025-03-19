@@ -51,7 +51,7 @@ public class Dashboard extends AppCompatActivity {
     private String lastSpokenMessage = "";
 
     private MaterialCardView emergencyCard, waterRequestCard, foodRequestCard, 
-                           bathroomRequestCard, medicineRequestCard, videoCallCard, messageContainer;
+                           bathroomRequestCard, homeControlCard, videoCallCard, messageContainer;
     private AnimationDrawable animatedBackground;
     private NestedScrollView scrollView;
     private MaterialToolbar toolbar;
@@ -79,7 +79,7 @@ public class Dashboard extends AppCompatActivity {
         waterRequestCard = findViewById(R.id.waterRequestCard);
         foodRequestCard = findViewById(R.id.foodRequestCard);
         bathroomRequestCard = findViewById(R.id.bathroomRequestCard);
-        medicineRequestCard = findViewById(R.id.medicineRequestCard);
+        homeControlCard = findViewById(R.id.homeControlCard);
         videoCallCard = findViewById(R.id.videoCallCard);
         
         // Initialize toolbar
@@ -131,7 +131,7 @@ public class Dashboard extends AppCompatActivity {
         new Handler().postDelayed(() -> waterRequestCard.startAnimation(slideUp), 200);
         new Handler().postDelayed(() -> foodRequestCard.startAnimation(slideUp), 300);
         new Handler().postDelayed(() -> bathroomRequestCard.startAnimation(slideUp), 400);
-        new Handler().postDelayed(() -> medicineRequestCard.startAnimation(slideUp), 500);
+        new Handler().postDelayed(() -> homeControlCard.startAnimation(slideUp), 500);
         new Handler().postDelayed(() -> videoCallCard.startAnimation(fadeIn), 600);
     }
 
@@ -153,8 +153,8 @@ public class Dashboard extends AppCompatActivity {
                 request = "Food";
             } else if (v == bathroomRequestCard) {
                 request = "Bathroom";
-            } else if (v == medicineRequestCard) {
-                request = "Medicine";
+            } else if (v == homeControlCard) {
+                controlLights();
             } else if (v == videoCallCard) {
                 startVideoCall();
                 return;
@@ -170,7 +170,7 @@ public class Dashboard extends AppCompatActivity {
         waterRequestCard.setOnClickListener(cardClickListener);
         foodRequestCard.setOnClickListener(cardClickListener);
         bathroomRequestCard.setOnClickListener(cardClickListener);
-        medicineRequestCard.setOnClickListener(cardClickListener);
+        homeControlCard.setOnClickListener(cardClickListener);
         videoCallCard.setOnClickListener(cardClickListener);
     }
 
@@ -234,6 +234,22 @@ public class Dashboard extends AppCompatActivity {
     private void startVideoCall() {
         Intent intent = new Intent(this, VideoCallActivity.class);
         startActivity(intent);
+    }
+    private void controlLights(){
+        String packageName = "com.example.smarthomecontrol"; // Your app's package name
+        String activityName = "com.example.smarthomecontrol.MainActivity"; // The fully qualified class name
+
+        Intent intent = new Intent();
+        intent.setClassName(packageName, activityName);
+
+        try {
+            context.startActivity(intent);
+        } catch (android.content.ActivityNotFoundException e) {
+
+            e.printStackTrace(); // Log the error for debugging
+            // Optionally, show a message to the user:
+             Toast.makeText(context, "Dashboard activity not found.", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void showSuccessMessage(String message) {
