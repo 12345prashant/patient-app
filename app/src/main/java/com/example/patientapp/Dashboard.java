@@ -38,11 +38,12 @@ import java.util.Map;
 
 public class Dashboard extends AppCompatActivity {
     private DatabaseReference firebaseRef;
+    private Context context;
     private SharedPreferences sharedPreferences;
     private FirebaseAuth mAuth;
 
     private TextView latestMessage, msg;
-    private DatabaseReference messagesRef;
+    private DatabaseReference messagesRef, databaseReference;
     private ImageView notificationIcon;
     private Handler handler = new Handler();
 
@@ -50,7 +51,7 @@ public class Dashboard extends AppCompatActivity {
     private String lastSpokenMessage = "";
 
     private MaterialCardView emergencyCard, waterRequestCard, foodRequestCard, 
-                           bathroomRequestCard, medicineRequestCard, videoCallCard, messageContainer;
+                           bathroomRequestCard, homeControlCard, videoCallCard, messageContainer;
     private AnimationDrawable animatedBackground;
     private NestedScrollView scrollView;
     private MaterialToolbar toolbar;
@@ -59,6 +60,8 @@ public class Dashboard extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dashboard);
+
+        context = this;
 
         initializeViews();
         setupAnimations();
@@ -76,7 +79,7 @@ public class Dashboard extends AppCompatActivity {
         waterRequestCard = findViewById(R.id.waterRequestCard);
         foodRequestCard = findViewById(R.id.foodRequestCard);
         bathroomRequestCard = findViewById(R.id.bathroomRequestCard);
-        medicineRequestCard = findViewById(R.id.medicineRequestCard);
+        homeControlCard = findViewById(R.id.homeControlCard);
         videoCallCard = findViewById(R.id.videoCallCard);
         
         // Initialize toolbar
@@ -128,7 +131,7 @@ public class Dashboard extends AppCompatActivity {
         new Handler().postDelayed(() -> waterRequestCard.startAnimation(slideUp), 200);
         new Handler().postDelayed(() -> foodRequestCard.startAnimation(slideUp), 300);
         new Handler().postDelayed(() -> bathroomRequestCard.startAnimation(slideUp), 400);
-        new Handler().postDelayed(() -> medicineRequestCard.startAnimation(slideUp), 500);
+        new Handler().postDelayed(() -> homeControlCard.startAnimation(slideUp), 500);
         new Handler().postDelayed(() -> videoCallCard.startAnimation(fadeIn), 600);
     }
 
@@ -141,16 +144,17 @@ public class Dashboard extends AppCompatActivity {
 
             String request = "";
             if (v == emergencyCard) {
-                request = "Emergency Help";
+//                request = "Emergency Help";
                 sendEmergencyAlert();
+
             } else if (v == waterRequestCard) {
                 request = "Water";
             } else if (v == foodRequestCard) {
                 request = "Food";
             } else if (v == bathroomRequestCard) {
                 request = "Bathroom";
-            } else if (v == medicineRequestCard) {
-                request = "Medicine";
+            } else if (v == homeControlCard) {
+                controlLights();
             } else if (v == videoCallCard) {
                 startVideoCall();
                 return;
@@ -166,7 +170,7 @@ public class Dashboard extends AppCompatActivity {
         waterRequestCard.setOnClickListener(cardClickListener);
         foodRequestCard.setOnClickListener(cardClickListener);
         bathroomRequestCard.setOnClickListener(cardClickListener);
-        medicineRequestCard.setOnClickListener(cardClickListener);
+        homeControlCard.setOnClickListener(cardClickListener);
         videoCallCard.setOnClickListener(cardClickListener);
     }
 
@@ -225,24 +229,27 @@ public class Dashboard extends AppCompatActivity {
         });
     }
 
-    private void sendEmergencyAlert() {
-        if (messagesRef != null) {
-            String timestamp = String.valueOf(System.currentTimeMillis());
-            Map<String, Object> message = new HashMap<>();
-            message.put("sender", "patient");
-            message.put("text", "EMERGENCY: Immediate help needed!");
-            message.put("timestamp", timestamp);
-            message.put("priority", "high");
 
-            messagesRef.child(timestamp).setValue(message)
-                    .addOnSuccessListener(aVoid -> showSuccessMessage("Emergency alert sent!"))
-                    .addOnFailureListener(e -> showErrorMessage("Failed to send emergency alert"));
-        }
-    }
 
     private void startVideoCall() {
         Intent intent = new Intent(this, VideoCallActivity.class);
         startActivity(intent);
+    }
+    private void controlLights(){
+        String packageName = "com.example.smarthomecontrol"; // Your app's package name
+        String activityName = "com.example.smarthomecontrol.MainActivity"; // The fully qualified class name
+
+        Intent intent = new Intent();
+        intent.setClassName(packageName, activityName);
+
+        try {
+            context.startActivity(intent);
+        } catch (android.content.ActivityNotFoundException e) {
+
+            e.printStackTrace(); // Log the error for debugging
+            // Optionally, show a message to the user:
+             Toast.makeText(context, "Dashboard activity not found.", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void showSuccessMessage(String message) {
@@ -349,5 +356,31 @@ public class Dashboard extends AppCompatActivity {
         }
         super.onDestroy();
     }
+    // Function to send an emergency alert to Firebase
+    private void sendEmergencyAlert() {
+        databaseReference = FirebaseDatabase.getInstance().getReference("emergency_alerts");
+
+        // Get patient email from SharedPreferences
+        SharedPreferences sharedPreferences = Dashboard.this.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE); // Use Dashboard.this as context
+        String patientEmail = sharedPreferences.getString("user_email", null);
+
+        if (patientEmail == null) {
+            Toast.makeText(Dashboard.this, "User email not found!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Replace "." with "," since Firebase keys can't have dots
+        String patientKey = patientEmail.replace(".", "_");
+
+        Map<String, Object> alertData = new HashMap<>();
+        alertData.put("patientId", patientKey);
+        alertData.put("timestamp", System.currentTimeMillis());
+
+        databaseReference.child(patientKey).setValue(alertData)
+                .addOnSuccessListener(aVoid -> Toast.makeText(Dashboard.this, "Emergency Alert Sent!", Toast.LENGTH_SHORT).show())
+                .addOnFailureListener(e -> Toast.makeText(Dashboard.this, "Failed to send alert", Toast.LENGTH_SHORT).show());
+    }
+
+
 }
 
