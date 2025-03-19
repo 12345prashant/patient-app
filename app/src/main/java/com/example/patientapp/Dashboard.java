@@ -313,11 +313,11 @@ public class Dashboard extends AppCompatActivity {
                                 if (!finalLatestCaretakerMessage.equals(lastSpokenMessage)) showNotification();
                             });
 
-                            // Speak only if the latest caretaker message is NEW
+                        // Speak only if the latest caretaker message is NEW
                             if (!latestCaretakerMessage.equals(lastSpokenMessage)) {
-                                speakMessage("caretaker", latestCaretakerMessage);
-                                lastSpokenMessage = latestCaretakerMessage; // Update last spoken message
-                            }
+                            speakMessage("caretaker", latestCaretakerMessage);
+                            lastSpokenMessage = latestCaretakerMessage; // Update last spoken message
+                        }
                         } else {
                             Log.d("Firebase", "No caretaker messages found.");
                         }
