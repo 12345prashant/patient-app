@@ -38,11 +38,12 @@ import java.util.Map;
 
 public class Dashboard extends AppCompatActivity {
     private DatabaseReference firebaseRef;
+    private Context context;
     private SharedPreferences sharedPreferences;
     private FirebaseAuth mAuth;
 
     private TextView latestMessage, msg;
-    private DatabaseReference messagesRef;
+    private DatabaseReference messagesRef, databaseReference;
     private ImageView notificationIcon;
     private Handler handler = new Handler();
 
@@ -59,6 +60,8 @@ public class Dashboard extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dashboard);
+
+        context = this;
 
         initializeViews();
         setupAnimations();
@@ -141,8 +144,9 @@ public class Dashboard extends AppCompatActivity {
 
             String request = "";
             if (v == emergencyCard) {
-                request = "Emergency Help";
+//                request = "Emergency Help";
                 sendEmergencyAlert();
+
             } else if (v == waterRequestCard) {
                 request = "Water";
             } else if (v == foodRequestCard) {
@@ -225,20 +229,7 @@ public class Dashboard extends AppCompatActivity {
         });
     }
 
-    private void sendEmergencyAlert() {
-        if (messagesRef != null) {
-            String timestamp = String.valueOf(System.currentTimeMillis());
-            Map<String, Object> message = new HashMap<>();
-            message.put("sender", "patient");
-            message.put("text", "EMERGENCY: Immediate help needed!");
-            message.put("timestamp", timestamp);
-            message.put("priority", "high");
 
-            messagesRef.child(timestamp).setValue(message)
-                    .addOnSuccessListener(aVoid -> showSuccessMessage("Emergency alert sent!"))
-                    .addOnFailureListener(e -> showErrorMessage("Failed to send emergency alert"));
-        }
-    }
 
     private void startVideoCall() {
         Intent intent = new Intent(this, VideoCallActivity.class);
@@ -349,5 +340,31 @@ public class Dashboard extends AppCompatActivity {
         }
         super.onDestroy();
     }
+    // Function to send an emergency alert to Firebase
+    private void sendEmergencyAlert() {
+        databaseReference = FirebaseDatabase.getInstance().getReference("emergency_alerts");
+
+        // Get patient email from SharedPreferences
+        SharedPreferences sharedPreferences = Dashboard.this.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE); // Use Dashboard.this as context
+        String patientEmail = sharedPreferences.getString("user_email", null);
+
+        if (patientEmail == null) {
+            Toast.makeText(Dashboard.this, "User email not found!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Replace "." with "," since Firebase keys can't have dots
+        String patientKey = patientEmail.replace(".", "_");
+
+        Map<String, Object> alertData = new HashMap<>();
+        alertData.put("patientId", patientKey);
+        alertData.put("timestamp", System.currentTimeMillis());
+
+        databaseReference.child(patientKey).setValue(alertData)
+                .addOnSuccessListener(aVoid -> Toast.makeText(Dashboard.this, "Emergency Alert Sent!", Toast.LENGTH_SHORT).show())
+                .addOnFailureListener(e -> Toast.makeText(Dashboard.this, "Failed to send alert", Toast.LENGTH_SHORT).show());
+    }
+
+
 }
 
