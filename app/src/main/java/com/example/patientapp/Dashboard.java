@@ -1,41 +1,58 @@
 package com.example.patientapp;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.drawable.AnimationDrawable;
+import android.media.Image;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.speech.tts.TextToSpeech;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.camera.core.Camera;
+import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ImageAnalysis;
+import androidx.camera.core.ImageProxy;
+import androidx.camera.core.Preview;
+import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.view.PreviewView;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.widget.NestedScrollView;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.card.MaterialCardView;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.mlkit.vision.common.InputImage;
+import com.google.mlkit.vision.face.Face;
+import com.google.mlkit.vision.face.FaceDetection;
+import com.google.mlkit.vision.face.FaceDetector;
+import com.google.mlkit.vision.face.FaceDetectorOptions;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Dashboard extends AppCompatActivity {
     private DatabaseReference firebaseRef;
@@ -58,9 +75,13 @@ public class Dashboard extends AppCompatActivity {
     private MaterialToolbar toolbar;
 
     private List<MaterialCardView> cards;
-
-
-    private int currentIndex = 0;
+    private PreviewView previewView;
+    private ExecutorService cameraExecutor;
+    private static final int CAMERA_REQUEST_CODE = 100;
+    private FaceDetector faceDetector;
+    private boolean blinkDetected = false; // Prevent multiple toasts
+    private boolean blinkCooldown = false;
+    private int highlightedIndex = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,6 +89,16 @@ public class Dashboard extends AppCompatActivity {
         setContentView(R.layout.activity_dashboard);
 
         context = this;
+        previewView = findViewById(R.id.previewView);
+        cameraExecutor = Executors.newSingleThreadExecutor();
+
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            startCamera();
+        } else {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, CAMERA_REQUEST_CODE);
+        }
+
+        setupFaceDetector();
 
         initializeViews();
         setupAnimations();
@@ -368,14 +399,7 @@ public class Dashboard extends AppCompatActivity {
         tts.speak(spokenText, TextToSpeech.QUEUE_FLUSH, null, null);
     }
 
-    @Override
-    protected void onDestroy() {
-        if (tts != null) {
-            tts.stop();
-            tts.shutdown();
-        }
-        super.onDestroy();
-    }
+
     // Function to send an emergency alert to Firebase
     private void sendEmergencyAlert() {
         databaseReference = FirebaseDatabase.getInstance().getReference("emergency_alerts");
@@ -421,14 +445,15 @@ public class Dashboard extends AppCompatActivity {
             // Reset all cards to their default state
             resetAllCards(cards);
 
-            // Highlight the current card
-            highlightCard(cards.get(currentIndex), true);
-
             // Move to the next card
-            currentIndex = (currentIndex + 1) % cards.size();
+            highlightedIndex = (highlightedIndex + 1) % cards.size();
+            // Highlight the current card
+            highlightCard(cards.get(highlightedIndex), true);
 
-            // Repeat after a delay (e.g., 2 seconds)
-            handler.postDelayed(this, 2000); // 2000ms = 2 seconds
+
+
+            // Repeat after a delay (e.g., 3 seconds)
+            handler.postDelayed(this, 3000); // 3000ms = 3 seconds
         }
     };
 
@@ -437,5 +462,113 @@ public class Dashboard extends AppCompatActivity {
             highlightCard(card, false);
         }
     }
+
+    private void setupFaceDetector() {
+        FaceDetectorOptions options = new FaceDetectorOptions.Builder()
+                .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
+                .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_NONE)
+                .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_ALL)
+                .build();
+        faceDetector = FaceDetection.getClient(options);
+    }
+
+    private void startCamera() {
+        ListenableFuture<ProcessCameraProvider> cameraProviderFuture =
+                ProcessCameraProvider.getInstance(this);
+
+        cameraProviderFuture.addListener(() -> {
+            try {
+                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+
+                CameraSelector cameraSelector = new CameraSelector.Builder()
+                        .requireLensFacing(CameraSelector.LENS_FACING_FRONT) // Use front camera
+                        .build();
+
+                Preview preview = new Preview.Builder()
+                        .build();
+                preview.setSurfaceProvider(previewView.getSurfaceProvider());
+
+                ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
+                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                        .build();
+
+                imageAnalysis.setAnalyzer(cameraExecutor, image -> {
+                    processImage(image);
+                });
+
+                cameraProvider.unbindAll();
+                Camera camera = cameraProvider.bindToLifecycle(
+                        this, cameraSelector, preview, imageAnalysis);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                Toast.makeText(this, "Error starting camera: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        }, ContextCompat.getMainExecutor(this));
+    }
+
+    private void processImage(ImageProxy imageProxy) {
+        @SuppressWarnings("UnsafeOptInUsageError")
+        Image mediaImage = imageProxy.getImage();
+        if (mediaImage != null) {
+            InputImage image = InputImage.fromMediaImage(mediaImage, imageProxy.getImageInfo().getRotationDegrees());
+
+            faceDetector.process(image)
+                    .addOnSuccessListener(faces -> {
+                        for (Face face : faces) {
+                            Float leftEyeOpen = face.getLeftEyeOpenProbability();
+                            Float rightEyeOpen = face.getRightEyeOpenProbability();
+
+                            if (leftEyeOpen != null && rightEyeOpen != null) {
+                                if (leftEyeOpen < 0.2 && rightEyeOpen < 0.2) {  // Eye closed threshold
+                                    if (!blinkDetected && !blinkCooldown) {
+                                        blinkDetected = true;
+                                        runOnUiThread(() -> performBlinkAction());
+                                        Log.d("BlinkDetect", "Blink detected!");
+                                        blinkCooldown = true;
+                                        handler.postDelayed(() -> blinkCooldown = false, 2000); // 2 seconds cooldown
+                                    }
+                                } else {
+                                    blinkDetected = false;  // Reset when eyes are open
+                                }
+                            }
+                        }
+                        imageProxy.close();
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e("BlinkDetect", "Face detection failed", e);
+                        imageProxy.close();
+                    });
+        }
+    }
+
+    private void performBlinkAction() {
+//        Toast.makeText(Dashboard.this, "Eye Blink Detected", Toast.LENGTH_SHORT).show();
+        cards.get(highlightedIndex).performClick();
+
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == CAMERA_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                startCamera();
+            } else {
+                Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (tts != null) {
+            tts.stop();
+            tts.shutdown();
+        }
+        super.onDestroy();
+        cameraExecutor.shutdown();
+    }
+
 }
 

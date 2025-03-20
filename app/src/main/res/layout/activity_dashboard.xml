@@ -22,6 +22,7 @@
             app:titleTextAppearance="@style/TextAppearance.PatientApp.Headline2"
             app:titleTextColor="@color/text_primary" />
 
+
     </com.google.android.material.appbar.AppBarLayout>
 
     <!-- Message Notification -->
@@ -65,6 +66,15 @@
         </LinearLayout>
 
     </com.google.android.material.card.MaterialCardView>
+
+    <!-- Small fixed-size box for face preview -->
+    <androidx.camera.view.PreviewView
+        android:id="@+id/previewView"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_centerInParent="true"
+        android:visibility="invisible"
+        android:background="@android:color/black"/>
 
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scrollView"
@@ -310,6 +320,7 @@
             </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
+
 
     </androidx.core.widget.NestedScrollView>
 
