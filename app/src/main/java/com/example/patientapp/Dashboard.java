@@ -54,7 +54,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class Dashboard extends AppCompatActivity {
+public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper.BlinkListener{
     private DatabaseReference firebaseRef;
     private Context context;
     private SharedPreferences sharedPreferences;
@@ -76,12 +76,11 @@ public class Dashboard extends AppCompatActivity {
 
     private List<MaterialCardView> cards;
     private PreviewView previewView;
-    private ExecutorService cameraExecutor;
+
     private static final int CAMERA_REQUEST_CODE = 100;
-    private FaceDetector faceDetector;
-    private boolean blinkDetected = false; // Prevent multiple toasts
-    private boolean blinkCooldown = false;
+
     private int highlightedIndex = 0;
+    private BlinkDetectionHelper blinkDetectionHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,15 +89,14 @@ public class Dashboard extends AppCompatActivity {
 
         context = this;
         previewView = findViewById(R.id.previewView);
-        cameraExecutor = Executors.newSingleThreadExecutor();
+        blinkDetectionHelper = new BlinkDetectionHelper(this, previewView, this);
 
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-            startCamera();
+            blinkDetectionHelper.startCamera(this);
         } else {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, CAMERA_REQUEST_CODE);
         }
 
-        setupFaceDetector();
 
         initializeViews();
         setupAnimations();
@@ -463,97 +461,12 @@ public class Dashboard extends AppCompatActivity {
         }
     }
 
-    private void setupFaceDetector() {
-        FaceDetectorOptions options = new FaceDetectorOptions.Builder()
-                .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
-                .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_NONE)
-                .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_ALL)
-                .build();
-        faceDetector = FaceDetection.getClient(options);
-    }
-
-    private void startCamera() {
-        ListenableFuture<ProcessCameraProvider> cameraProviderFuture =
-                ProcessCameraProvider.getInstance(this);
-
-        cameraProviderFuture.addListener(() -> {
-            try {
-                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
-
-                CameraSelector cameraSelector = new CameraSelector.Builder()
-                        .requireLensFacing(CameraSelector.LENS_FACING_FRONT) // Use front camera
-                        .build();
-
-                Preview preview = new Preview.Builder()
-                        .build();
-                preview.setSurfaceProvider(previewView.getSurfaceProvider());
-
-                ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
-                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                        .build();
-
-                imageAnalysis.setAnalyzer(cameraExecutor, image -> {
-                    processImage(image);
-                });
-
-                cameraProvider.unbindAll();
-                Camera camera = cameraProvider.bindToLifecycle(
-                        this, cameraSelector, preview, imageAnalysis);
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                Toast.makeText(this, "Error starting camera: " + e.getMessage(), Toast.LENGTH_LONG).show();
-            }
-        }, ContextCompat.getMainExecutor(this));
-    }
-
-    private void processImage(ImageProxy imageProxy) {
-        @SuppressWarnings("UnsafeOptInUsageError")
-        Image mediaImage = imageProxy.getImage();
-        if (mediaImage != null) {
-            InputImage image = InputImage.fromMediaImage(mediaImage, imageProxy.getImageInfo().getRotationDegrees());
-
-            faceDetector.process(image)
-                    .addOnSuccessListener(faces -> {
-                        for (Face face : faces) {
-                            Float leftEyeOpen = face.getLeftEyeOpenProbability();
-                            Float rightEyeOpen = face.getRightEyeOpenProbability();
-
-                            if (leftEyeOpen != null && rightEyeOpen != null) {
-                                if (leftEyeOpen < 0.2 && rightEyeOpen < 0.2) {  // Eye closed threshold
-                                    if (!blinkDetected && !blinkCooldown) {
-                                        blinkDetected = true;
-                                        runOnUiThread(() -> performBlinkAction());
-                                        Log.d("BlinkDetect", "Blink detected!");
-                                        blinkCooldown = true;
-                                        handler.postDelayed(() -> blinkCooldown = false, 2000); // 2 seconds cooldown
-                                    }
-                                } else {
-                                    blinkDetected = false;  // Reset when eyes are open
-                                }
-                            }
-                        }
-                        imageProxy.close();
-                    })
-                    .addOnFailureListener(e -> {
-                        Log.e("BlinkDetect", "Face detection failed", e);
-                        imageProxy.close();
-                    });
-        }
-    }
-
-    private void performBlinkAction() {
-//        Toast.makeText(Dashboard.this, "Eye Blink Detected", Toast.LENGTH_SHORT).show();
-        cards.get(highlightedIndex).performClick();
-
-    }
-
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == CAMERA_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                startCamera();
+                blinkDetectionHelper.startCamera(this);
             } else {
                 Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show();
             }
@@ -567,8 +480,13 @@ public class Dashboard extends AppCompatActivity {
             tts.shutdown();
         }
         super.onDestroy();
-        cameraExecutor.shutdown();
+        blinkDetectionHelper.shutdownCameraExecutor();
+
     }
 
+    @Override
+    public void onBlinkDetected() {
+        cards.get(highlightedIndex).performClick();
+    }
 }
 
