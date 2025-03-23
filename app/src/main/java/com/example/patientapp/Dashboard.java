@@ -190,6 +190,8 @@ public class Dashboard extends AppCompatActivity {
         }
     }
 
+
+
     private void initializeTextToSpeech() {
         tts = new TextToSpeech(this, status -> {
             if (status == TextToSpeech.SUCCESS) {
