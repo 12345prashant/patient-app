@@ -134,6 +134,14 @@ public class Dashboard extends AppCompatActivity {
         new Handler().postDelayed(() -> medicineRequestCard.startAnimation(slideUp), 500);
         new Handler().postDelayed(() -> videoCallCard.startAnimation(fadeIn), 600);
     }
+    public void onBackPressed() {
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Exit App")
+                .setMessage("Are you sure you want to exit?")
+                .setPositiveButton("Yes", (dialog, which) -> finishAffinity()) // Exit the app
+                .setNegativeButton("No", (dialog, which) -> dialog.dismiss()) // Dismiss dialog
+                .show();
+    }
 
     private void setupClickListeners() {
         // Add ripple effect and click listeners to cards
