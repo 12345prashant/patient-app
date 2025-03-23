@@ -117,7 +117,7 @@ public class AddCaretakerActivity extends AppCompatActivity {
         editor.remove("caretaker_email"); // Remove caretaker email
         editor.apply();  // Save changes
 
-        // Sign out from Firebase
+//        Sign out from Firebase
         mAuth.signOut();
 
         // Redirect to MainActivity (login screen)

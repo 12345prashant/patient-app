@@ -98,20 +98,35 @@ public class MainActivity extends AppCompatActivity {
 
 
     // Function to handle user login
+//    private void loginUser(String email, String password) {
+//        String caretakerEmail = sharedPreferences.getString("caretaker_email", null);
+//        mAuth.signInWithEmailAndPassword(email, password)
+//                .addOnCompleteListener(this, task -> {
+//                    if (task.isSuccessful()) {
+//                        sharedPreferences.edit().putString("user_email", email).apply();
+////                        checkPatientCaretaker(email);
+//                        if (caretakerEmail != null) {
+//                            startActivity(new Intent(MainActivity.this, Dashboard.class));
+//                            finish();
+//
+//                        } else {
+//                            startActivity(new Intent(MainActivity.this, AddCaretakerActivity.class));
+//                        }
+//                    } else {
+//                        Toast.makeText(MainActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
+//                    }
+//                });
+//    }
+
     private void loginUser(String email, String password) {
-        String caretakerEmail = sharedPreferences.getString("caretaker_email", null);
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
+                        // Save the user's email to SharedPreferences
                         sharedPreferences.edit().putString("user_email", email).apply();
-//                        checkPatientCaretaker(email);
-                        if (caretakerEmail != null) {
-                            startActivity(new Intent(MainActivity.this, Dashboard.class));
-                            finish();
 
-                        } else {
-                            startActivity(new Intent(MainActivity.this, AddCaretakerActivity.class));
-                        }
+                        // Check Firebase to see if the user has a linked caretaker
+                        checkPatientCaretaker(email);
                     } else {
                         Toast.makeText(MainActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
                     }
@@ -119,25 +134,54 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // Check if the patient has a linked caretaker
+//    private void checkPatientCaretaker(String email) {
+//        String patientKey = email.replace(".", "_");
+//
+//        databaseReference.child(patientKey).child("caretaker_email").get()
+//                .addOnCompleteListener(task -> {
+//                    if (task.isSuccessful()) {
+//                        DataSnapshot snapshot = task.getResult();
+//                        if (snapshot.exists()) {
+//                            String caretakerEmail = snapshot.getValue(String.class);
+//                            sharedPreferences.edit().putString("caretaker_email", caretakerEmail).apply();
+//                            startActivity(new Intent(MainActivity.this, Dashboard.class));
+//                        } else {
+//                            startActivity(new Intent(MainActivity.this, AddCaretakerActivity.class));
+//                        }
+//                        finish();
+//                    } else {
+//                        Toast.makeText(MainActivity.this, "Error fetching caretaker data", Toast.LENGTH_SHORT).show();
+//                    }
+//                });
+//    }
+
     private void checkPatientCaretaker(String email) {
         String patientKey = email.replace(".", "_");
 
-        databaseReference.child(patientKey).child("caretaker_email").get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        DataSnapshot snapshot = task.getResult();
-                        if (snapshot.exists()) {
-                            String caretakerEmail = snapshot.getValue(String.class);
-                            sharedPreferences.edit().putString("caretaker_email", caretakerEmail).apply();
-                            startActivity(new Intent(MainActivity.this, Dashboard.class));
-                        } else {
-                            startActivity(new Intent(MainActivity.this, AddCaretakerActivity.class));
-                        }
-                        finish();
-                    } else {
-                        Toast.makeText(MainActivity.this, "Error fetching caretaker data", Toast.LENGTH_SHORT).show();
-                    }
-                });
+        // Reference to the patient's node in Firebase
+        DatabaseReference patientRef = databaseReference.child(patientKey);
+
+        // Fetch the caretaker_email field from Firebase
+        patientRef.child("caretaker_email").get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                DataSnapshot snapshot = task.getResult();
+                if (snapshot.exists()) {
+                    // Caretaker is linked, save the caretaker's email to SharedPreferences
+                    String caretakerEmail = snapshot.getValue(String.class);
+                    sharedPreferences.edit().putString("caretaker_email", caretakerEmail).apply();
+
+                    // Redirect to Dashboard
+                    startActivity(new Intent(MainActivity.this, Dashboard.class));
+                } else {
+                    // No caretaker linked, redirect to AddCaretakerActivity
+                    startActivity(new Intent(MainActivity.this, AddCaretakerActivity.class));
+                }
+                finish(); // Close MainActivity
+            } else {
+                // Handle Firebase error
+                Toast.makeText(MainActivity.this, "Error fetching caretaker data", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
 }

@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:id="@+id/coordinatorLayout"
     android:background="@color/background">
 
     <com.google.android.material.appbar.AppBarLayout
@@ -17,9 +18,10 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="@android:color/transparent"
+            app:menu="@menu/dashboard_menu"
             app:titleTextAppearance="@style/TextAppearance.PatientApp.Headline2"
-            app:titleTextColor="@color/text_primary"
-            app:menu="@menu/dashboard_menu" />
+            app:titleTextColor="@color/text_primary" />
+
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -30,13 +32,13 @@
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="16dp"
         android:layout_marginTop="8dp"
+        android:visibility="gone"
         app:cardBackgroundColor="@color/surface"
         app:cardCornerRadius="8dp"
         app:cardElevation="4dp"
         app:layout_anchor="@id/appBarLayout"
         app:layout_anchorGravity="bottom|center"
-        app:layout_behavior="com.google.android.material.behavior.HideBottomViewOnScrollBehavior"
-        android:visibility="gone">
+        app:layout_behavior="com.google.android.material.behavior.HideBottomViewOnScrollBehavior">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -64,6 +66,15 @@
         </LinearLayout>
 
     </com.google.android.material.card.MaterialCardView>
+
+    <!-- Small fixed-size box for face preview -->
+    <androidx.camera.view.PreviewView
+        android:id="@+id/previewView"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_centerInParent="true"
+        android:visibility="invisible"
+        android:background="@android:color/black"/>
 
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scrollView"
@@ -108,14 +119,13 @@
                         android:layout_gravity="center_vertical"
                         android:layout_marginStart="16dp"
                         android:text="Emergency Help"
-                        android:textColor="@color/white"
+                        android:textColor="@color/gray"
                         android:textSize="24sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Service Request Grid -->
             <androidx.gridlayout.widget.GridLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -233,9 +243,9 @@
 
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Medicine Request -->
+                <!-- Light/Fan Control -->
                 <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/medicineRequestCard"
+                    android:id="@+id/homeControlCard"
                     style="@style/Widget.PatientApp.Card"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -262,7 +272,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
-                            android:text="Medicine"
+                            android:text="Control Light/Fan"
                             android:textAppearance="@style/TextAppearance.PatientApp.Body1"
                             android:textStyle="bold" />
                     </LinearLayout>
@@ -303,14 +313,14 @@
                     <TextView
                         android:id="@+id/msg"
                         android:layout_width="100dp"
-                        android:layout_height="100dp"
-                        />
+                        android:layout_height="100dp" />
 
                 </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
+
 
     </androidx.core.widget.NestedScrollView>
 

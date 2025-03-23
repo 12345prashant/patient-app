@@ -1,42 +1,60 @@
 package com.example.patientapp;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.drawable.AnimationDrawable;
+import android.media.Image;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.speech.tts.TextToSpeech;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.camera.core.Camera;
+import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ImageAnalysis;
+import androidx.camera.core.ImageProxy;
+import androidx.camera.core.Preview;
+import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.view.PreviewView;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.widget.NestedScrollView;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.card.MaterialCardView;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.mlkit.vision.common.InputImage;
+import com.google.mlkit.vision.face.Face;
+import com.google.mlkit.vision.face.FaceDetection;
+import com.google.mlkit.vision.face.FaceDetector;
+import com.google.mlkit.vision.face.FaceDetectorOptions;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-public class Dashboard extends AppCompatActivity {
+public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper.BlinkListener{
     private DatabaseReference firebaseRef;
     private Context context;
     private SharedPreferences sharedPreferences;
@@ -51,10 +69,18 @@ public class Dashboard extends AppCompatActivity {
     private String lastSpokenMessage = "";
 
     private MaterialCardView emergencyCard, waterRequestCard, foodRequestCard, 
-                           bathroomRequestCard, medicineRequestCard, videoCallCard, messageContainer;
+                           bathroomRequestCard, homeControlCard, videoCallCard, messageContainer;
     private AnimationDrawable animatedBackground;
     private NestedScrollView scrollView;
     private MaterialToolbar toolbar;
+
+    private List<MaterialCardView> cards;
+    private PreviewView previewView;
+
+    private static final int CAMERA_REQUEST_CODE = 100;
+
+    private int highlightedIndex = 0;
+    private BlinkDetectionHelper blinkDetectionHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,6 +88,15 @@ public class Dashboard extends AppCompatActivity {
         setContentView(R.layout.activity_dashboard);
 
         context = this;
+        previewView = findViewById(R.id.previewView);
+        blinkDetectionHelper = new BlinkDetectionHelper(this, previewView, this);
+
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            blinkDetectionHelper.startCamera(this);
+        } else {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, CAMERA_REQUEST_CODE);
+        }
+
 
         initializeViews();
         setupAnimations();
@@ -79,7 +114,7 @@ public class Dashboard extends AppCompatActivity {
         waterRequestCard = findViewById(R.id.waterRequestCard);
         foodRequestCard = findViewById(R.id.foodRequestCard);
         bathroomRequestCard = findViewById(R.id.bathroomRequestCard);
-        medicineRequestCard = findViewById(R.id.medicineRequestCard);
+        homeControlCard = findViewById(R.id.homeControlCard);
         videoCallCard = findViewById(R.id.videoCallCard);
         
         // Initialize toolbar
@@ -91,7 +126,7 @@ public class Dashboard extends AppCompatActivity {
         scrollView = findViewById(R.id.scrollView);
 
         // Set background animation
-        View rootView = findViewById(android.R.id.content);
+        View rootView = findViewById(R.id.coordinatorLayout);
         rootView.setBackgroundResource(R.drawable.gradient_background);
         animatedBackground = (AnimationDrawable) rootView.getBackground();
         
@@ -103,6 +138,19 @@ public class Dashboard extends AppCompatActivity {
             }
             return false;
         });
+
+        handler = new Handler();
+
+        // Initialize the list..
+        cards = new ArrayList<>();
+        cards.add(emergencyCard);
+        cards.add(waterRequestCard);
+        cards.add(foodRequestCard);
+        cards.add(bathroomRequestCard);
+        cards.add(homeControlCard);
+        cards.add(videoCallCard);
+
+        handler.post(highlightRunnable);
 
         // Initialize message views with new IDs
         latestMessage = findViewById(R.id.message);
@@ -131,8 +179,9 @@ public class Dashboard extends AppCompatActivity {
         new Handler().postDelayed(() -> waterRequestCard.startAnimation(slideUp), 200);
         new Handler().postDelayed(() -> foodRequestCard.startAnimation(slideUp), 300);
         new Handler().postDelayed(() -> bathroomRequestCard.startAnimation(slideUp), 400);
-        new Handler().postDelayed(() -> medicineRequestCard.startAnimation(slideUp), 500);
+        new Handler().postDelayed(() -> homeControlCard.startAnimation(slideUp), 500);
         new Handler().postDelayed(() -> videoCallCard.startAnimation(fadeIn), 600);
+
     }
     public void onBackPressed() {
         new android.app.AlertDialog.Builder(this)
@@ -161,8 +210,8 @@ public class Dashboard extends AppCompatActivity {
                 request = "Food";
             } else if (v == bathroomRequestCard) {
                 request = "Bathroom";
-            } else if (v == medicineRequestCard) {
-                request = "Medicine";
+            } else if (v == homeControlCard) {
+                controlLights();
             } else if (v == videoCallCard) {
                 startVideoCall();
                 return;
@@ -178,7 +227,7 @@ public class Dashboard extends AppCompatActivity {
         waterRequestCard.setOnClickListener(cardClickListener);
         foodRequestCard.setOnClickListener(cardClickListener);
         bathroomRequestCard.setOnClickListener(cardClickListener);
-        medicineRequestCard.setOnClickListener(cardClickListener);
+        homeControlCard.setOnClickListener(cardClickListener);
         videoCallCard.setOnClickListener(cardClickListener);
     }
 
@@ -244,6 +293,22 @@ public class Dashboard extends AppCompatActivity {
     private void startVideoCall() {
         Intent intent = new Intent(this, VideoCallActivity.class);
         startActivity(intent);
+    }
+    private void controlLights(){
+        String packageName = "com.example.smarthomecontrol"; // Your app's package name
+        String activityName = "com.example.smarthomecontrol.MainActivity"; // The fully qualified class name
+
+        Intent intent = new Intent();
+        intent.setClassName(packageName, activityName);
+
+        try {
+            context.startActivity(intent);
+        } catch (android.content.ActivityNotFoundException e) {
+
+            e.printStackTrace(); // Log the error for debugging
+            // Optionally, show a message to the user:
+             Toast.makeText(context, "Dashboard activity not found.", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void showSuccessMessage(String message) {
@@ -314,11 +379,11 @@ public class Dashboard extends AppCompatActivity {
                                 if (!finalLatestCaretakerMessage.equals(lastSpokenMessage)) showNotification();
                             });
 
-                            // Speak only if the latest caretaker message is NEW
+                        // Speak only if the latest caretaker message is NEW
                             if (!latestCaretakerMessage.equals(lastSpokenMessage)) {
-                                speakMessage("caretaker", latestCaretakerMessage);
-                                lastSpokenMessage = latestCaretakerMessage; // Update last spoken message
-                            }
+                            speakMessage("caretaker", latestCaretakerMessage);
+                            lastSpokenMessage = latestCaretakerMessage; // Update last spoken message
+                        }
                         } else {
                             Log.d("Firebase", "No caretaker messages found.");
                         }
@@ -334,7 +399,7 @@ public class Dashboard extends AppCompatActivity {
     private void showNotification() {
         messageContainer.setVisibility(View.VISIBLE);
         // Hide after 5 seconds
-        handler.postDelayed(() -> messageContainer.setVisibility(View.GONE), 10000);
+        handler.postDelayed(() -> messageContainer.setVisibility(View.GONE), 5000);
     }
 
     private void speakMessage(String sender, String message) {
@@ -342,14 +407,7 @@ public class Dashboard extends AppCompatActivity {
         tts.speak(spokenText, TextToSpeech.QUEUE_FLUSH, null, null);
     }
 
-    @Override
-    protected void onDestroy() {
-        if (tts != null) {
-            tts.stop();
-            tts.shutdown();
-        }
-        super.onDestroy();
-    }
+
     // Function to send an emergency alert to Firebase
     private void sendEmergencyAlert() {
         databaseReference = FirebaseDatabase.getInstance().getReference("emergency_alerts");
@@ -376,5 +434,69 @@ public class Dashboard extends AppCompatActivity {
     }
 
 
+    private void highlightCard(MaterialCardView card, boolean highlight) {
+        if (highlight) {
+            // Highlight the card (e.g., change background color or stroke color)
+            card.setCardBackgroundColor(ContextCompat.getColor(this, R.color.warning)); // Use a highlight color
+            card.setStrokeWidth(4); // Add a border
+            card.setStrokeColor(ContextCompat.getColor(this, R.color.warning)); // Use a stroke color
+        } else {
+            // Reset the card to its original state
+            card.setCardBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Use the default card color
+            card.setStrokeWidth(0); // Remove the border
+        }
+    }
+
+    private Runnable highlightRunnable = new Runnable() {
+        @Override
+        public void run() {
+            // Reset all cards to their default state
+            resetAllCards(cards);
+
+            // Move to the next card
+            highlightedIndex = (highlightedIndex + 1) % cards.size();
+            // Highlight the current card
+            highlightCard(cards.get(highlightedIndex), true);
+
+
+
+            // Repeat after a delay (e.g., 3 seconds)
+            handler.postDelayed(this, 3000); // 3000ms = 3 seconds
+        }
+    };
+
+    private void resetAllCards(List<MaterialCardView> cards) {
+        for (MaterialCardView card : cards) {
+            highlightCard(card, false);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == CAMERA_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                blinkDetectionHelper.startCamera(this);
+            } else {
+                Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (tts != null) {
+            tts.stop();
+            tts.shutdown();
+        }
+        super.onDestroy();
+        blinkDetectionHelper.shutdownCameraExecutor();
+
+    }
+
+    @Override
+    public void onBlinkDetected() {
+        cards.get(highlightedIndex).performClick();
+    }
 }
 
