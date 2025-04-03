@@ -51,6 +51,16 @@
         <activity
             android:name=".SendMessage"
             android:exported="true"/>
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="true"/>
+
+        <activity
+            android:name=".BlackScreenActivity"
+            android:theme="@style/Theme.AppCompat.NoActionBar"
+            android:screenOrientation="portrait"
+            android:configChanges="orientation|keyboardHidden|screenSize"/>
+
 
     </application>
 

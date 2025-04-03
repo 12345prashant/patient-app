@@ -2,6 +2,10 @@ package com.example.patientapp;
 
 import android.Manifest;
 import android.content.Context;
+import android.graphics.Color;
+//import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -82,6 +86,8 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
     private int highlightedIndex = 0;
     private BlinkDetectionHelper blinkDetectionHelper;
 
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -135,6 +141,15 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
             if (item.getItemId() == R.id.action_logout) {
                 logoutUser();
                 return true;
+            }else if (item.getItemId() == R.id.action_settings) {
+                openSettings();
+                return true;
+            }else if (item.getItemId() == R.id.action_bedtime) {
+
+                Toast.makeText(this, "BedTime clicked", Toast.LENGTH_SHORT).show();
+                toggleBedTimeMode();
+
+                return true;
             }
             return false;
         });
@@ -156,6 +171,8 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
         latestMessage = findViewById(R.id.message);
         notificationIcon = findViewById(R.id.notification_icon);
         msg = findViewById(R.id.msg);
+
+
     }
 
     @Override
@@ -331,6 +348,27 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
         startActivity(intent);
         finish();
     }
+    private void openSettings() {
+        // Start your settings activity or show a settings dialog
+        Toast.makeText(this, "Settings clicked", Toast.LENGTH_SHORT).show();
+        // Or start a SettingsActivity:
+         Intent intent = new Intent(Dashboard.this, SettingsActivity.class);
+         startActivity(intent);
+    }
+    private void toggleBedTimeMode(){
+        try {
+            Intent intent = new Intent(Dashboard.this, BlackScreenActivity.class);
+            startActivity(intent);
+            // Optional: Add transition animation
+//            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+        } catch (Exception e) {
+            Log.e("Dashboard", "Error starting BlackScreenActivity", e);
+            Toast.makeText(this, "Error activating bedtime mode", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
+
 
     private void listenForMessages() {
         // Ensure messagesRef is correctly initialized
@@ -491,6 +529,8 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
         }
         super.onDestroy();
         blinkDetectionHelper.shutdownCameraExecutor();
+
+
 
     }
 

@@ -6,4 +6,16 @@
         android:icon="@drawable/ic_logout"
         android:title="Logout"
         app:showAsAction="always" />
-</menu> 
+
+    <item
+        android:id="@+id/action_settings"
+        android:icon="@drawable/baseline_settings_24"
+        android:title="Settings"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_bedtime"
+        android:icon="@drawable/moon_solid"
+        android:title="Bed Time"
+        app:showAsAction="always" />
+</menu>
