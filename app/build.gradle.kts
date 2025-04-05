@@ -50,6 +50,7 @@ dependencies {
     implementation("androidx.camera:camera-view:1.3.0")
     implementation("com.google.firebase:firebase-storage:20.2.1")
     implementation("org.webrtc:google-webrtc:1.0.30039@aar")
+    implementation("io.socket:socket.io-client:2.0.1")
 
 
 }

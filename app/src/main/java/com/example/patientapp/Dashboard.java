@@ -2,6 +2,10 @@ package com.example.patientapp;
 
 import android.Manifest;
 import android.content.Context;
+import android.graphics.Color;
+//import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -54,6 +58,24 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.os.Bundle;
+import android.view.SurfaceView;
+import android.widget.FrameLayout;
+import android.widget.Toast;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import io.agora.rtc2.ChannelMediaOptions;
+import io.agora.rtc2.Constants;
+import io.agora.rtc2.IRtcEngineEventHandler;
+import io.agora.rtc2.RtcEngine;
+import io.agora.rtc2.RtcEngineConfig;
+import io.agora.rtc2.video.VideoCanvas;
+
 public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper.BlinkListener{
     private DatabaseReference firebaseRef;
     private Context context;
@@ -68,8 +90,8 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
     private TextToSpeech tts;
     private String lastSpokenMessage = "";
 
-    private MaterialCardView emergencyCard, waterRequestCard, foodRequestCard, 
-                           bathroomRequestCard, homeControlCard, videoCallCard, messageContainer;
+    private MaterialCardView emergencyCard, waterRequestCard, foodRequestCard,
+            bathroomRequestCard, homeControlCard, videoCallCard, messageContainer;
     private AnimationDrawable animatedBackground;
     private NestedScrollView scrollView;
     private MaterialToolbar toolbar;
@@ -77,10 +99,44 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
     private List<MaterialCardView> cards;
     private PreviewView previewView;
 
-    private static final int CAMERA_REQUEST_CODE = 100;
+//    private static final int CAMERA_REQUEST_CODE = 100;
 
     private int highlightedIndex = 0;
     private BlinkDetectionHelper blinkDetectionHelper;
+
+    private static final int PERMISSION_REQ_ID = 22;
+    private String myAppId = "e96507b0abbc41969519575c26fa5814";
+    private String channelName = "channel2";
+    private String token = "007eJxTYPC3y/m+U0iDTe2JnvSPJyeffQpcrrX5UJlA+wPmwzdu6MoqMKRampkamCcZJCYlJZsYWppZmhpampqbJhuZpSWaWhiaPLP4kN4QyMhg1PufhZEBAkF8DobkjMS8vNQcIwYGAOdPIWs=";
+    private RtcEngine mRtcEngine;
+    private final IRtcEngineEventHandler mRtcEventHandler = new IRtcEngineEventHandler() {
+        // Callback when successfully joining the channel
+        @Override
+        public void onJoinChannelSuccess(String channel, int uid, int elapsed) {
+            super.onJoinChannelSuccess(channel, uid, elapsed);
+            showToast("Joined channel " + channel);
+        }
+        // Callback when a remote user or host joins the current channel
+        @Override
+        public void onUserJoined(int uid, int elapsed) {
+            super.onUserJoined(uid, elapsed);
+            runOnUiThread(() -> {
+                // When a remote user joins the channel, display the remote video stream for the specified uid
+                setupRemoteVideo(uid);
+                showToast("User joined: " + uid); // Show toast for user joining
+            });
+        }
+        // Callback when a remote user or host leaves the current channel
+        @Override
+        public void onUserOffline(int uid, int reason) {
+            super.onUserOffline(uid, reason);
+            runOnUiThread(() -> {
+                showToast("User offline: " + uid); // Show toast for user going offline
+            });
+        }
+    };
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,11 +147,14 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
         previewView = findViewById(R.id.previewView);
         blinkDetectionHelper = new BlinkDetectionHelper(this, previewView, this);
 
-        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-            blinkDetectionHelper.startCamera(this);
-        } else {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, CAMERA_REQUEST_CODE);
-        }
+
+
+
+//        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+//            blinkDetectionHelper.startCamera(this);
+//        } else {
+//            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, CAMERA_REQUEST_CODE);
+//        }
 
 
         initializeViews();
@@ -104,11 +163,95 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
         initializeFirebase();
         initializeTextToSpeech();
         listenForMessages();
+        if (checkPermissions()) {
+
+            startVideoCalling();
+            blinkDetectionHelper.startCamera(this);
+        } else {
+            requestPermissions();
+        }
+    }
+    private void requestPermissions() {
+        ActivityCompat.requestPermissions(this, getRequiredPermissions(), PERMISSION_REQ_ID);
+    }
+    private boolean checkPermissions() {
+        for (String permission : getRequiredPermissions()) {
+            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+                return false;
+            }
+        }
+        return true;
+    }
+    private String[] getRequiredPermissions() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            return new String[]{
+                    Manifest.permission.RECORD_AUDIO,
+                    Manifest.permission.CAMERA,
+                    Manifest.permission.READ_PHONE_STATE,
+                    Manifest.permission.BLUETOOTH_CONNECT
+            };
+        } else {
+            return new String[]{
+                    Manifest.permission.RECORD_AUDIO,
+                    Manifest.permission.CAMERA
+            };
+        }
+    }
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == PERMISSION_REQ_ID && checkPermissions()) {
+
+            startVideoCalling();
+            blinkDetectionHelper.startCamera(this);
+        }
+    }
+    private void startVideoCalling() {
+        initializeAgoraVideoSDK();
+        enableVideo();
+        setupLocalVideo();
+        joinChannel();
+    }
+    private void initializeAgoraVideoSDK() {
+        try {
+            RtcEngineConfig config = new RtcEngineConfig();
+            config.mContext = getBaseContext();
+            config.mAppId = myAppId;
+            config.mEventHandler = mRtcEventHandler;
+            mRtcEngine = RtcEngine.create(config);
+        } catch (Exception e) {
+            throw new RuntimeException("Error initializing RTC engine: " + e.getMessage());
+        }
+    }
+    private void enableVideo() {
+        mRtcEngine.enableVideo();
+        mRtcEngine.startPreview();
+    }
+    private void setupLocalVideo() {
+//        FrameLayout container = findViewById(R.id.local_video_view_container);
+        SurfaceView surfaceView = new SurfaceView(getBaseContext());
+//        container.addView(surfaceView);
+        mRtcEngine.setupLocalVideo(new VideoCanvas(surfaceView, VideoCanvas.RENDER_MODE_FIT, 0));
+    }
+    private void joinChannel() {
+        ChannelMediaOptions options = new ChannelMediaOptions();
+        options.clientRoleType = Constants.CLIENT_ROLE_BROADCASTER;
+        options.channelProfile = Constants.CHANNEL_PROFILE_COMMUNICATION;
+        options.publishCameraTrack = true;
+        options.publishMicrophoneTrack = true;
+        mRtcEngine.joinChannel(token, channelName, 0, options);
+    }
+    private void setupRemoteVideo(int uid) {
+//        FrameLayout container = findViewById(R.id.remote_video_view_container);
+        SurfaceView surfaceView = new SurfaceView(getBaseContext());
+        surfaceView.setZOrderMediaOverlay(true);
+//        container.addView(surfaceView);
+        mRtcEngine.setupRemoteVideo(new VideoCanvas(surfaceView, VideoCanvas.RENDER_MODE_FIT, uid));
     }
 
     private void initializeViews() {
         mAuth = FirebaseAuth.getInstance();
-        
+
         // Initialize cards
         emergencyCard = findViewById(R.id.emergencyCard);
         waterRequestCard = findViewById(R.id.waterRequestCard);
@@ -116,12 +259,12 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
         bathroomRequestCard = findViewById(R.id.bathroomRequestCard);
         homeControlCard = findViewById(R.id.homeControlCard);
         videoCallCard = findViewById(R.id.videoCallCard);
-        
+
         // Initialize toolbar
         toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         toolbar.inflateMenu(R.menu.dashboard_menu);
-        
+
         // Initialize scroll view with correct ID
         scrollView = findViewById(R.id.scrollView);
 
@@ -129,11 +272,20 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
         View rootView = findViewById(R.id.coordinatorLayout);
         rootView.setBackgroundResource(R.drawable.gradient_background);
         animatedBackground = (AnimationDrawable) rootView.getBackground();
-        
+
         // Set toolbar menu for logout
         toolbar.setOnMenuItemClickListener(item -> {
             if (item.getItemId() == R.id.action_logout) {
                 logoutUser();
+                return true;
+            }else if (item.getItemId() == R.id.action_settings) {
+                openSettings();
+                return true;
+            }else if (item.getItemId() == R.id.action_bedtime) {
+
+                Toast.makeText(this, "BedTime clicked", Toast.LENGTH_SHORT).show();
+                toggleBedTimeMode();
+
                 return true;
             }
             return false;
@@ -156,6 +308,8 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
         latestMessage = findViewById(R.id.message);
         notificationIcon = findViewById(R.id.notification_icon);
         msg = findViewById(R.id.msg);
+
+
     }
 
     @Override
@@ -183,6 +337,14 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
         new Handler().postDelayed(() -> videoCallCard.startAnimation(fadeIn), 600);
 
     }
+    public void onBackPressed() {
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Exit App")
+                .setMessage("Are you sure you want to exit?")
+                .setPositiveButton("Yes", (dialog, which) -> finishAffinity()) // Exit the app
+                .setNegativeButton("No", (dialog, which) -> dialog.dismiss()) // Dismiss dialog
+                .show();
+    }
 
     private void setupClickListeners() {
         // Add ripple effect and click listeners to cards
@@ -205,7 +367,7 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
             } else if (v == homeControlCard) {
                 controlLights();
             } else if (v == videoCallCard) {
-                startVideoCall();
+//                startVideoCall();
                 return;
             }
 
@@ -225,10 +387,10 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
 
     private void initializeFirebase() {
         sharedPreferences = getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
-        
+
         String patientEmail = sharedPreferences.getString("user_email", "").replace(".", "_");
         String caretakerEmail = sharedPreferences.getString("caretaker_email", "").replace(".", "_");
-        
+
         if (!caretakerEmail.isEmpty() && !patientEmail.isEmpty()) {
             String messageKey = caretakerEmail + "_" + patientEmail;
             messagesRef = FirebaseDatabase.getInstance().getReference("messages").child(messageKey);
@@ -238,6 +400,8 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
 
         }
     }
+
+
 
     private void initializeTextToSpeech() {
         tts = new TextToSpeech(this, status -> {
@@ -280,10 +444,7 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
 
 
 
-    private void startVideoCall() {
-        Intent intent = new Intent(this, VideoCallActivity.class);
-        startActivity(intent);
-    }
+
     private void controlLights(){
         String packageName = "com.example.smarthomecontrol"; // Your app's package name
         String activityName = "com.example.smarthomecontrol.MainActivity"; // The fully qualified class name
@@ -297,7 +458,7 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
 
             e.printStackTrace(); // Log the error for debugging
             // Optionally, show a message to the user:
-             Toast.makeText(context, "Dashboard activity not found.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "Dashboard activity not found.", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -321,6 +482,27 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
         startActivity(intent);
         finish();
     }
+    private void openSettings() {
+        // Start your settings activity or show a settings dialog
+        Toast.makeText(this, "Settings clicked", Toast.LENGTH_SHORT).show();
+        // Or start a SettingsActivity:
+        Intent intent = new Intent(Dashboard.this, SettingsActivity.class);
+        startActivity(intent);
+    }
+    private void toggleBedTimeMode(){
+        try {
+            Intent intent = new Intent(Dashboard.this, BlackScreenActivity.class);
+            startActivity(intent);
+            // Optional: Add transition animation
+//            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+        } catch (Exception e) {
+            Log.e("Dashboard", "Error starting BlackScreenActivity", e);
+            Toast.makeText(this, "Error activating bedtime mode", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
+
 
     private void listenForMessages() {
         // Ensure messagesRef is correctly initialized
@@ -347,9 +529,9 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
 
                             // Log each message for debugging
                             Log.d("Firebase", "Sender: " + sender + ", Text: " + text);
-
+                            String caretakerEmail = sharedPreferences.getString("caretaker_email", "");
                             // Only process messages sent by caretaker
-                            if (sender.equals("caretaker") && text != null) {
+                            if (sender.equals(caretakerEmail) && text != null) {
                                 caretakerMessages.add(text);
                                 latestCaretakerMessage = text;
                             }
@@ -369,11 +551,11 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
                                 if (!finalLatestCaretakerMessage.equals(lastSpokenMessage)) showNotification();
                             });
 
-                        // Speak only if the latest caretaker message is NEW
+                            // Speak only if the latest caretaker message is NEW
                             if (!latestCaretakerMessage.equals(lastSpokenMessage)) {
-                            speakMessage("caretaker", latestCaretakerMessage);
-                            lastSpokenMessage = latestCaretakerMessage; // Update last spoken message
-                        }
+                                speakMessage("caretaker", latestCaretakerMessage);
+                                lastSpokenMessage = latestCaretakerMessage; // Update last spoken message
+                            }
                         } else {
                             Log.d("Firebase", "No caretaker messages found.");
                         }
@@ -461,17 +643,17 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
         }
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == CAMERA_REQUEST_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                blinkDetectionHelper.startCamera(this);
-            } else {
-                Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
+//    @Override
+//    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+//        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+//        if (requestCode == CAMERA_REQUEST_CODE) {
+//            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+//                blinkDetectionHelper.startCamera(this);
+//            } else {
+//                Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show();
+//            }
+//        }
+//    }
 
     @Override
     protected void onDestroy() {
@@ -481,7 +663,20 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
         }
         super.onDestroy();
         blinkDetectionHelper.shutdownCameraExecutor();
+        cleanupAgoraEngine();
 
+
+
+    }
+    private void cleanupAgoraEngine() {
+        if (mRtcEngine != null) {
+            mRtcEngine.stopPreview();
+            mRtcEngine.leaveChannel();
+            mRtcEngine = null;
+        }
+    }
+    private void showToast(String message) {
+        runOnUiThread(() -> Toast.makeText(Dashboard.this, message, Toast.LENGTH_SHORT).show());
     }
 
     @Override
@@ -489,4 +684,3 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
         cards.get(highlightedIndex).performClick();
     }
 }
-
