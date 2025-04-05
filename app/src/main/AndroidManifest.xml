@@ -52,6 +52,10 @@
             android:name=".SendMessage"
             android:exported="true"/>
 
+        <activity
+            android:name=".VideoCallActivity"
+            android:exported="true"/>
+
     </application>
 
 </manifest>

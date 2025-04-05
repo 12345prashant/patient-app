@@ -5,17 +5,17 @@
     android:background="#000000">
 
     <!-- Local Video Feed -->
-    <org.webrtc.SurfaceViewRenderer
-        android:id="@+id/local_video_view"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_centerInParent="true" />
+<!--    <org.webrtc.SurfaceViewRenderer-->
+<!--        android:id="@+id/local_video_view"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="match_parent"-->
+<!--        android:layout_centerInParent="true" />-->
     <!-- Video View for Streaming Patient's Camera -->
-    <SurfaceView
-        android:id="@+id/remote_video_view"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_centerInParent="true" />
+<!--    <SurfaceView-->
+<!--        android:id="@+id/remote_video_view"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="match_parent"-->
+<!--        android:layout_centerInParent="true" />-->
 
     <!-- Button to End the Call -->
     <Button
