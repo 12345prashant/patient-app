@@ -1,6 +1,7 @@
 package com.example.patientapp;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.graphics.Color;
 //import android.view.ViewGroup;
@@ -86,6 +87,8 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
     private int highlightedIndex = 0;
     private BlinkDetectionHelper blinkDetectionHelper;
 
+    private long lastToggleTime = 0L;
+    private final long TOGGLE_DEBOUNCE_DELAY = 3000L; // Adjust this value as needed
 
 
     @Override
@@ -201,7 +204,8 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
 
     }
     public void onBackPressed() {
-        new android.app.AlertDialog.Builder(this)
+//        super.onBackPressed();
+        new AlertDialog.Builder(this)
                 .setTitle("Exit App")
                 .setMessage("Are you sure you want to exit?")
                 .setPositiveButton("Yes", (dialog, which) -> finishAffinity()) // Exit the app
@@ -313,8 +317,7 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
     }
     private void controlLights(){
         String packageName = "com.example.smarthomecontrol"; // Your app's package name
-        String activityName = "com.example.smarthomecontrol.MainActivity"; // The fully qualified class name
-
+        String activityName = "com.example.smarthomecontrol.MainActivity";
         Intent intent = new Intent();
         intent.setClassName(packageName, activityName);
 
@@ -322,8 +325,7 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
             context.startActivity(intent);
         } catch (android.content.ActivityNotFoundException e) {
 
-            e.printStackTrace(); // Log the error for debugging
-            // Optionally, show a message to the user:
+            e.printStackTrace();
              Toast.makeText(context, "Dashboard activity not found.", Toast.LENGTH_SHORT).show();
         }
     }
@@ -536,7 +538,15 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
 
     @Override
     public void onBlinkDetected() {
-        cards.get(highlightedIndex).performClick();
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastToggleTime >= TOGGLE_DEBOUNCE_DELAY) {
+            lastToggleTime = currentTime;
+            cards.get(highlightedIndex).performClick();
+        } else {
+            Log.d("BlinkToggle", "Blink ignored due to debounce.");
+//        Toast.makeText(context, "Ignoring rapid blink.", Toast.LENGTH_SHORT).show(); // Optional feedback
+        }
+
     }
 }
 
