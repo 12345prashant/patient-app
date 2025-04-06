@@ -1,8 +1,11 @@
 package com.example.patientapp;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.Image;
 import android.os.Handler;
+import android.util.Base64;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -18,12 +21,18 @@ import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleOwner;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.face.Face;
 import com.google.mlkit.vision.face.FaceDetection;
 import com.google.mlkit.vision.face.FaceDetector;
 import com.google.mlkit.vision.face.FaceDetectorOptions;
 
+import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -38,16 +47,74 @@ public class BlinkDetectionHelper {
     private Context context;
     private BlinkListener blinkListener;
 
+    private DatabaseReference firebaseRef;
+    private Handler frameHandler = new Handler();
+    private Runnable frameUploadRunnable;
+    private long uploadInterval = 1000; // 1 second
+    private Bitmap lastProcessedFrame;
+
     public interface BlinkListener {
         void onBlinkDetected();
     }
 
-    public BlinkDetectionHelper(Context context, PreviewView previewView, BlinkListener blinkListener) {
+    public BlinkDetectionHelper(Context context, PreviewView previewView, BlinkListener blinkListener, String patientId) {
         this.context = context;
         this.previewView = previewView;
         this.blinkListener = blinkListener;
         this.cameraExecutor = Executors.newSingleThreadExecutor();
+        if (patientId != null) {
+            firebaseRef = FirebaseDatabase.getInstance().getReference()
+                    .child("patient_frames").child(patientId);
+        }
         setupFaceDetector();
+        setupFrameUploader();
+    }
+    private void setupFrameUploader() {
+        frameUploadRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (lastProcessedFrame != null) {
+                    uploadFrameToFirebase(lastProcessedFrame);
+                }
+                frameHandler.postDelayed(this, uploadInterval);
+            }
+        };
+        frameHandler.postDelayed(frameUploadRunnable, uploadInterval);
+    }
+    private void uploadFrameToFirebase(Bitmap frame) {
+        if (firebaseRef == null) return;
+
+        // Compress frame to JPEG (reduce size)
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        frame.compress(Bitmap.CompressFormat.JPEG, 70, baos);
+        byte[] imageBytes = baos.toByteArray();
+        String base64Image = Base64.encodeToString(imageBytes, Base64.DEFAULT);
+
+        // Prepare Firebase data
+        Map<String, Object> frameData = new HashMap<>();
+        frameData.put("image", base64Image);
+        frameData.put("timestamp", System.currentTimeMillis());
+
+        // Upload
+//        firebaseRef.child("frames").push().setValue(frameData)
+//                .addOnSuccessListener(aVoid -> Log.d("Firebase", "Frame uploaded"))
+//                .addOnFailureListener(e -> Log.e("Firebase", "Upload failed", e));
+        firebaseRef.child("current_frame").setValue(frameData)
+                .addOnSuccessListener(aVoid -> Log.d("Firebase", "Frame uploaded"))
+                .addOnFailureListener(e -> Log.e("Firebase", "Upload failed", e));
+    }
+    public static Bitmap imageProxyToBitmap(ImageProxy imageProxy) {
+        @SuppressWarnings("UnsafeOptInUsageError")
+        Image image = imageProxy.getImage();
+        if (image == null) return null;
+
+        ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+        byte[] bytes = new byte[buffer.remaining()];
+        buffer.get(bytes);
+
+        Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+        image.close();
+        return bitmap;
     }
 
     private void setupFaceDetector() {
@@ -99,7 +166,7 @@ public class BlinkDetectionHelper {
         Image mediaImage = imageProxy.getImage();
         if (mediaImage != null) {
             InputImage image = InputImage.fromMediaImage(mediaImage, imageProxy.getImageInfo().getRotationDegrees());
-
+            lastProcessedFrame = imageProxy.toBitmap();
             faceDetector.process(image)
                     .addOnSuccessListener(faces -> {
                         for (Face face : faces) {

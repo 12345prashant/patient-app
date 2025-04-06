@@ -142,9 +142,13 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dashboard);
 
+        SharedPreferences prefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        String userEmail = prefs.getString("user_email", null);
+        String patientId = userEmail != null ? userEmail.replace(".", ",") : null;
+
         context = this;
         previewView = findViewById(R.id.previewView);
-        blinkDetectionHelper = new BlinkDetectionHelper(this, previewView, this);
+        blinkDetectionHelper = new BlinkDetectionHelper(this, previewView, this, patientId);
 
 
 
@@ -367,8 +371,8 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
                 controlLights();
             } else if (v == videoCallCard) {
 //                startVideoCall();
-                Intent intent = new Intent(Dashboard.this, LiveStreamService.class);
-                startActivity(intent);
+//                Intent intent = new Intent(Dashboard.this, LiveStreamService.class);
+//                startActivity(intent);
                 return;
             }
 
