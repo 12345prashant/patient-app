@@ -30,33 +30,33 @@ public class SendMessage extends AppCompatActivity {
     private MessageAdapter messageAdapter;
     private List<String> messageList;
 
-    private FirebaseAuth mAuth;
-    private DatabaseReference messagesDatabase;
-    private String patientEmail, caretakerEmail;
-    private String chatRoomId;
+//    private FirebaseAuth mAuth;
+//    private DatabaseReference messagesDatabase;
+//    private String patientEmail, caretakerEmail;
+//    private String chatRoomId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_send_message);
 
-        mAuth = FirebaseAuth.getInstance();
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-
-        SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
-        patientEmail = sharedPreferences.getString("user_email", null);
-        caretakerEmail = sharedPreferences.getString("caretaker_email", null);
-
-        if (currentUser == null || patientEmail == null || caretakerEmail == null) {
-            Toast.makeText(this, "User or caretaker email not found!", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
-        }
-
-        String patientKey = patientEmail.replace(".", "_");
-        String caretakerKey = caretakerEmail.replace(".", "_");
-        chatRoomId = caretakerKey + "_" + patientKey;
-        messagesDatabase = FirebaseDatabase.getInstance().getReference("messages").child(chatRoomId);
+//        mAuth = FirebaseAuth.getInstance();
+//        FirebaseUser currentUser = mAuth.getCurrentUser();
+//
+//        SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+//        patientEmail = sharedPreferences.getString("user_email", null);
+//        caretakerEmail = sharedPreferences.getString("caretaker_email", null);
+//
+//        if (currentUser == null || patientEmail == null || caretakerEmail == null) {
+//            Toast.makeText(this, "User or caretaker email not found!", Toast.LENGTH_SHORT).show();
+//            finish();
+//            return;
+//        }
+//
+//        String patientKey = patientEmail.replace(".", "_");
+//        String caretakerKey = caretakerEmail.replace(".", "_");
+//        chatRoomId = caretakerKey + "_" + patientKey;
+//        messagesDatabase = FirebaseDatabase.getInstance().getReference("messages").child(chatRoomId);
 
         messageRecyclerView = findViewById(R.id.messageRecyclerView);
         messageRecyclerView.setLayoutManager(new LinearLayoutManager(this));
