@@ -113,7 +113,6 @@ public class BlinkDetectionHelper {
                                         handler.post(() -> performBlinkAction());
                                         Log.d("BlinkDetect", "Blink detected!");
 
-//                                        handler.postDelayed();
                                     }
                                 } else {
                                     blinkDetected = false;
