@@ -66,52 +66,52 @@ public class SendMessage extends AppCompatActivity {
         messageList.add("How are you?");
         messageList.add("When will you arrive?");
 
-        messageAdapter = new MessageAdapter(this, messageList, this);
+        messageAdapter = new MessageAdapter(this, messageList);
         messageRecyclerView.setAdapter(messageAdapter);
 
     }
 
-    public void sendMessage(String messageText) {
-        Map<String, Object> messageData = new HashMap<>();
-        messageData.put("sender", "patient");
-        messageData.put("receiver", "caretaker");
-        messageData.put("text", messageText);
-        messageData.put("timestamp", System.currentTimeMillis());
+//    public void sendMessage(String messageText) {
+//        Map<String, Object> messageData = new HashMap<>();
+//        messageData.put("sender", "patient");
+//        messageData.put("receiver", "caretaker");
+//        messageData.put("text", messageText);
+//        messageData.put("timestamp", System.currentTimeMillis());
+//
+//        messagesDatabase.push().setValue(messageData).addOnCompleteListener(task -> {
+//            if (!task.isSuccessful()) {
+//                Toast.makeText(SendMessage.this, "Failed to send message", Toast.LENGTH_SHORT).show();
+//            } else {
+//                Toast.makeText(SendMessage.this, "Message sent", Toast.LENGTH_SHORT).show();
+//
+//                // Add the message to the list and notify the adapter
+////                messageList.add(messageText);
+////                messageAdapter.notifyItemInserted(messageList.size() - 1);
+////                messageRecyclerView.scrollToPosition(messageList.size() - 1);
+//            }
+//        });
+//    }
 
-        messagesDatabase.push().setValue(messageData).addOnCompleteListener(task -> {
-            if (!task.isSuccessful()) {
-                Toast.makeText(SendMessage.this, "Failed to send message", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(SendMessage.this, "Message sent", Toast.LENGTH_SHORT).show();
-
-                // Add the message to the list and notify the adapter
-//                messageList.add(messageText);
-//                messageAdapter.notifyItemInserted(messageList.size() - 1);
-//                messageRecyclerView.scrollToPosition(messageList.size() - 1);
-            }
-        });
-    }
-
-    private void loadMessages() {
-        messagesDatabase.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                messageList.clear();
-                for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                    String sender = snapshot.child("sender").getValue(String.class);
-                    String text = snapshot.child("text").getValue(String.class);
-
-                    if (sender != null && text != null && sender.equals("caretaker")) {
-                        messageList.add("Caretaker: " + text);
-                    }
-                }
-                messageAdapter.notifyDataSetChanged();
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-                Toast.makeText(SendMessage.this, "Failed to load messages: " + databaseError.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
+//    private void loadMessages() {
+//        messagesDatabase.addValueEventListener(new ValueEventListener() {
+//            @Override
+//            public void onDataChange(DataSnapshot dataSnapshot) {
+//                messageList.clear();
+//                for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+//                    String sender = snapshot.child("sender").getValue(String.class);
+//                    String text = snapshot.child("text").getValue(String.class);
+//
+//                    if (sender != null && text != null && sender.equals("caretaker")) {
+//                        messageList.add("Caretaker: " + text);
+//                    }
+//                }
+//                messageAdapter.notifyDataSetChanged();
+//            }
+//
+//            @Override
+//            public void onCancelled(DatabaseError databaseError) {
+//                Toast.makeText(SendMessage.this, "Failed to load messages: " + databaseError.getMessage(), Toast.LENGTH_SHORT).show();
+//            }
+//        });
+//    }
 }
