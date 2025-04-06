@@ -33,7 +33,7 @@ public class BlinkDetectionHelper {
     private ExecutorService cameraExecutor;
     private FaceDetector faceDetector;
     private boolean blinkDetected = false;
-    private boolean blinkCooldown = false;
+//    private boolean blinkCooldown = false;
     private Handler handler = new Handler();
     private Context context;
     private BlinkListener blinkListener;
@@ -108,12 +108,11 @@ public class BlinkDetectionHelper {
 
                             if (leftEyeOpen != null && rightEyeOpen != null) {
                                 if (leftEyeOpen < 0.2 && rightEyeOpen < 0.2) {
-                                    if (!blinkDetected && !blinkCooldown) {
+                                    if (!blinkDetected) {
                                         blinkDetected = true;
                                         handler.post(() -> performBlinkAction());
                                         Log.d("BlinkDetect", "Blink detected!");
-                                        blinkCooldown = true;
-                                        handler.postDelayed(() -> blinkCooldown = false, 2000);
+
                                     }
                                 } else {
                                     blinkDetected = false;
