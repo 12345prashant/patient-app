@@ -91,7 +91,7 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
     private String lastSpokenMessage = "";
 
     private MaterialCardView emergencyCard, waterRequestCard, foodRequestCard,
-            bathroomRequestCard, homeControlCard, videoCallCard, messageContainer;
+            bathroomRequestCard, homeControlCard, sendMessageCard, messageContainer;
     private AnimationDrawable animatedBackground;
     private NestedScrollView scrollView;
     private MaterialToolbar toolbar;
@@ -258,7 +258,7 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
         foodRequestCard = findViewById(R.id.foodRequestCard);
         bathroomRequestCard = findViewById(R.id.bathroomRequestCard);
         homeControlCard = findViewById(R.id.homeControlCard);
-        videoCallCard = findViewById(R.id.videoCallCard);
+        sendMessageCard = findViewById(R.id.sendMessageCard);
 
         // Initialize toolbar
         toolbar = findViewById(R.id.toolbar);
@@ -300,7 +300,7 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
         cards.add(foodRequestCard);
         cards.add(bathroomRequestCard);
         cards.add(homeControlCard);
-        cards.add(videoCallCard);
+        cards.add(sendMessageCard);
 
         handler.post(highlightRunnable);
 
@@ -334,7 +334,7 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
         new Handler().postDelayed(() -> foodRequestCard.startAnimation(slideUp), 300);
         new Handler().postDelayed(() -> bathroomRequestCard.startAnimation(slideUp), 400);
         new Handler().postDelayed(() -> homeControlCard.startAnimation(slideUp), 500);
-        new Handler().postDelayed(() -> videoCallCard.startAnimation(fadeIn), 600);
+        new Handler().postDelayed(() -> sendMessageCard.startAnimation(fadeIn), 600);
 
     }
     public void onBackPressed() {
@@ -366,8 +366,8 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
                 request = "Bathroom";
             } else if (v == homeControlCard) {
                 controlLights();
-            } else if (v == videoCallCard) {
-//                startVideoCall();
+            } else if (v == sendMessageCard) {
+                sendCustomMessage();
                 return;
             }
 
@@ -382,7 +382,7 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
         foodRequestCard.setOnClickListener(cardClickListener);
         bathroomRequestCard.setOnClickListener(cardClickListener);
         homeControlCard.setOnClickListener(cardClickListener);
-        videoCallCard.setOnClickListener(cardClickListener);
+        sendMessageCard.setOnClickListener(cardClickListener);
     }
 
     private void initializeFirebase() {
@@ -459,6 +459,18 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
             e.printStackTrace(); // Log the error for debugging
             // Optionally, show a message to the user:
             Toast.makeText(context, "Dashboard activity not found.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void sendCustomMessage(){
+
+        Intent intent = new Intent(context, SendMessage.class);
+
+        try {
+            context.startActivity(intent);
+        } catch (android.content.ActivityNotFoundException e) {
+            e.printStackTrace();
+            Toast.makeText(context, "Send Message activity not found.", Toast.LENGTH_SHORT).show();
         }
     }
 

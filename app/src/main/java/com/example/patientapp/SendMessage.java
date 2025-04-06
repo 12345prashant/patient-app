@@ -48,7 +48,7 @@ public class SendMessage extends AppCompatActivity {
         caretakerEmail = sharedPreferences.getString("caretaker_email", null);
 
         if (currentUser == null || patientEmail == null || caretakerEmail == null) {
-            Toast.makeText(this, "Authentication error", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "User or caretaker email not found!", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
@@ -62,13 +62,13 @@ public class SendMessage extends AppCompatActivity {
         messageRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         messageList = new ArrayList<>();
-        messageList.add("I need Help");
-        messageList.add("I need Help");
-        messageList.add("DRINK WATER");
+        messageList.add("Come here");
+        messageList.add("How are you?");
+        messageList.add("When will you arrive?");
+
         messageAdapter = new MessageAdapter(this, messageList, this);
         messageRecyclerView.setAdapter(messageAdapter);
 
-//        loadMessages();
     }
 
     public void sendMessage(String messageText) {

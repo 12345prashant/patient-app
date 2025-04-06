@@ -281,9 +281,9 @@
 
             </androidx.gridlayout.widget.GridLayout>
 
-            <!-- Video Call Card -->
+            <!-- Send Message Card -->
             <com.google.android.material.card.MaterialCardView
-                android:id="@+id/videoCallCard"
+                android:id="@+id/sendMessageCard"
                 style="@style/Widget.PatientApp.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -299,7 +299,7 @@
                     <ImageView
                         android:layout_width="48dp"
                         android:layout_height="48dp"
-                        android:src="@drawable/ic_video_call"
+                        android:src="@drawable/ic_message"
                         app:tint="@color/accent" />
 
                     <TextView
@@ -307,13 +307,13 @@
                         android:layout_height="wrap_content"
                         android:layout_gravity="center_vertical"
                         android:layout_marginStart="16dp"
-                        android:text="Video Call"
+                        android:text="Send Message"
                         android:textAppearance="@style/TextAppearance.PatientApp.Headline2" />
 
                     <TextView
                         android:id="@+id/msg"
-                        android:layout_width="100dp"
-                        android:layout_height="100dp" />
+                        android:layout_width="50dp"
+                        android:layout_height="50dp" />
 
                 </LinearLayout>
 

@@ -128,7 +128,7 @@ public class MainActivity extends AppCompatActivity {
                         // Check Firebase to see if the user has a linked caretaker
                         checkPatientCaretaker(email);
                     } else {
-                        Toast.makeText(MainActivity.this, "Authentication failed.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, "Invalid email or Authentication failed.", Toast.LENGTH_SHORT).show();
                     }
                 });
     }
