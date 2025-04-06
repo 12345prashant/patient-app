@@ -79,6 +79,11 @@
             android:name=".VideoCallActivity"
             android:exported="true"/>
 
+        <activity
+            android:name=".LiveStreamService"
+            android:exported="true"/>
+
+
     </application>
 
 </manifest>
