@@ -85,6 +85,8 @@ public class BlinkDetectionHelper {
         if (firebaseRef == null) return;
 
         // Compress frame to JPEG (reduce size)
+        firebaseRef.child("streaming_active").setValue(true);
+
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         frame.compress(Bitmap.CompressFormat.JPEG, 70, baos);
         byte[] imageBytes = baos.toByteArray();
