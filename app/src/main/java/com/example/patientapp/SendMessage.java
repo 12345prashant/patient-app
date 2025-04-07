@@ -61,13 +61,15 @@ public class SendMessage extends AppCompatActivity implements BlinkDetectionHelp
         Log.d(TAG, "onCreate called");
 
         context = this; // Store context
-
+        SharedPreferences prefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        String userEmail = prefs.getString("user_email", null);
+        String patientId = userEmail != null ? userEmail.replace(".", ",") : null;
         // Initialize Views
         previewView = findViewById(R.id.previewView);
         messageRecyclerView = findViewById(R.id.messageRecyclerView);
 
         // Initialize Blink Detection
-        blinkDetectionHelper = new BlinkDetectionHelper(this, previewView, this);
+        blinkDetectionHelper = new BlinkDetectionHelper(this, previewView, this,patientId );
 
         // Setup RecyclerView
         messageRecyclerView.setLayoutManager(new LinearLayoutManager(this));
