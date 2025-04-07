@@ -105,36 +105,7 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
     private BlinkDetectionHelper blinkDetectionHelper;
 
     private static final int PERMISSION_REQ_ID = 22;
-    private String myAppId = "e96507b0abbc41969519575c26fa5814";
-    private String channelName = "channel2";
-    private String token = "007eJxTYPC3y/m+U0iDTe2JnvSPJyeffQpcrrX5UJlA+wPmwzdu6MoqMKRampkamCcZJCYlJZsYWppZmhpampqbJhuZpSWaWhiaPLP4kN4QyMhg1PufhZEBAkF8DobkjMS8vNQcIwYGAOdPIWs=";
-    private RtcEngine mRtcEngine;
-    private final IRtcEngineEventHandler mRtcEventHandler = new IRtcEngineEventHandler() {
-        // Callback when successfully joining the channel
-        @Override
-        public void onJoinChannelSuccess(String channel, int uid, int elapsed) {
-            super.onJoinChannelSuccess(channel, uid, elapsed);
-            showToast("Joined channel " + channel);
-        }
-        // Callback when a remote user or host joins the current channel
-        @Override
-        public void onUserJoined(int uid, int elapsed) {
-            super.onUserJoined(uid, elapsed);
-            runOnUiThread(() -> {
-                // When a remote user joins the channel, display the remote video stream for the specified uid
-                setupRemoteVideo(uid);
-                showToast("User joined: " + uid); // Show toast for user joining
-            });
-        }
-        // Callback when a remote user or host leaves the current channel
-        @Override
-        public void onUserOffline(int uid, int reason) {
-            super.onUserOffline(uid, reason);
-            runOnUiThread(() -> {
-                showToast("User offline: " + uid); // Show toast for user going offline
-            });
-        }
-    };
+
 
 
 
@@ -165,7 +136,7 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
         listenForMessages();
         if (checkPermissions()) {
 
-            startVideoCalling();
+//            startVideoCalling();
             blinkDetectionHelper.startCamera(this);
         } else {
             requestPermissions();
@@ -202,52 +173,11 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == PERMISSION_REQ_ID && checkPermissions()) {
 
-            startVideoCalling();
+//            startVideoCalling();
             blinkDetectionHelper.startCamera(this);
         }
     }
-    private void startVideoCalling() {
-        initializeAgoraVideoSDK();
-        enableVideo();
-        setupLocalVideo();
-        joinChannel();
-    }
-    private void initializeAgoraVideoSDK() {
-        try {
-            RtcEngineConfig config = new RtcEngineConfig();
-            config.mContext = getBaseContext();
-            config.mAppId = myAppId;
-            config.mEventHandler = mRtcEventHandler;
-            mRtcEngine = RtcEngine.create(config);
-        } catch (Exception e) {
-            throw new RuntimeException("Error initializing RTC engine: " + e.getMessage());
-        }
-    }
-    private void enableVideo() {
-        mRtcEngine.enableVideo();
-        mRtcEngine.startPreview();
-    }
-    private void setupLocalVideo() {
-//        FrameLayout container = findViewById(R.id.local_video_view_container);
-        SurfaceView surfaceView = new SurfaceView(getBaseContext());
-//        container.addView(surfaceView);
-        mRtcEngine.setupLocalVideo(new VideoCanvas(surfaceView, VideoCanvas.RENDER_MODE_FIT, 0));
-    }
-    private void joinChannel() {
-        ChannelMediaOptions options = new ChannelMediaOptions();
-        options.clientRoleType = Constants.CLIENT_ROLE_BROADCASTER;
-        options.channelProfile = Constants.CHANNEL_PROFILE_COMMUNICATION;
-        options.publishCameraTrack = true;
-        options.publishMicrophoneTrack = true;
-        mRtcEngine.joinChannel(token, channelName, 0, options);
-    }
-    private void setupRemoteVideo(int uid) {
-//        FrameLayout container = findViewById(R.id.remote_video_view_container);
-        SurfaceView surfaceView = new SurfaceView(getBaseContext());
-        surfaceView.setZOrderMediaOverlay(true);
-//        container.addView(surfaceView);
-        mRtcEngine.setupRemoteVideo(new VideoCanvas(surfaceView, VideoCanvas.RENDER_MODE_FIT, uid));
-    }
+
 
     private void initializeViews() {
         mAuth = FirebaseAuth.getInstance();
@@ -468,6 +398,7 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
 
         try {
             context.startActivity(intent);
+            finish();
         } catch (android.content.ActivityNotFoundException e) {
             e.printStackTrace();
             Toast.makeText(context, "Send Message activity not found.", Toast.LENGTH_SHORT).show();
@@ -667,26 +598,8 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
 //        }
 //    }
 
-    @Override
-    protected void onDestroy() {
-        if (tts != null) {
-            tts.stop();
-            tts.shutdown();
-        }
-        super.onDestroy();
-        blinkDetectionHelper.shutdownCameraExecutor();
-        cleanupAgoraEngine();
 
 
-
-    }
-    private void cleanupAgoraEngine() {
-        if (mRtcEngine != null) {
-            mRtcEngine.stopPreview();
-            mRtcEngine.leaveChannel();
-            mRtcEngine = null;
-        }
-    }
     private void showToast(String message) {
         runOnUiThread(() -> Toast.makeText(Dashboard.this, message, Toast.LENGTH_SHORT).show());
     }
@@ -694,5 +607,43 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
     @Override
     public void onBlinkDetected() {
         cards.get(highlightedIndex).performClick();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (blinkDetectionHelper != null) {
+            // Only pause detection if we're not finishing
+            if (!isFinishing()) {
+                blinkDetectionHelper.pauseDetection();
+            } else {
+                blinkDetectionHelper.shutdown();
+            }
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (checkPermissions() && blinkDetectionHelper != null) {
+            if (!blinkDetectionHelper.isCameraRunning()) {
+                blinkDetectionHelper.startCamera(this);
+            } else {
+                blinkDetectionHelper.resumeDetection(this);
+            }
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (tts != null) {
+            tts.stop();
+            tts.shutdown();
+        }
+        super.onDestroy();
+        blinkDetectionHelper.shutdown();
+
+
+
     }
 }

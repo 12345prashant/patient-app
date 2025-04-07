@@ -33,10 +33,15 @@ public class BlinkDetectionHelper {
     private ExecutorService cameraExecutor;
     private FaceDetector faceDetector;
     private boolean blinkDetected = false;
-//    private boolean blinkCooldown = false;
     private Handler handler = new Handler();
     private Context context;
     private BlinkListener blinkListener;
+    private ProcessCameraProvider cameraProvider;
+    private ImageAnalysis imageAnalyzer;
+
+    // Cooldown variables to prevent multiple detections
+    private static final long BLINK_COOLDOWN_MS = 2000; // 1 second cooldown
+    private long lastBlinkTime = 0;
 
     public interface BlinkListener {
         void onBlinkDetected();
@@ -65,7 +70,7 @@ public class BlinkDetectionHelper {
 
         cameraProviderFuture.addListener(() -> {
             try {
-                ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
+                cameraProvider = cameraProviderFuture.get();
 
                 CameraSelector cameraSelector = new CameraSelector.Builder()
                         .requireLensFacing(CameraSelector.LENS_FACING_FRONT)
@@ -75,20 +80,18 @@ public class BlinkDetectionHelper {
                         .build();
                 preview.setSurfaceProvider(previewView.getSurfaceProvider());
 
-                ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
+                imageAnalyzer = new ImageAnalysis.Builder()
                         .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                         .build();
 
-                imageAnalysis.setAnalyzer(cameraExecutor, image -> {
-                    processImage(image);
-                });
+                imageAnalyzer.setAnalyzer(cameraExecutor, this::processImage);
 
                 cameraProvider.unbindAll();
-                Camera camera = cameraProvider.bindToLifecycle(
-                        lifecycleOwner, cameraSelector, preview, imageAnalysis);
+                cameraProvider.bindToLifecycle(
+                        lifecycleOwner, cameraSelector, preview, imageAnalyzer);
 
             } catch (Exception e) {
-                e.printStackTrace();
+                Log.e("BlinkDetection", "Error starting camera", e);
                 Toast.makeText(context, "Error starting camera: " + e.getMessage(), Toast.LENGTH_LONG).show();
             }
         }, ContextCompat.getMainExecutor(context));
@@ -107,12 +110,15 @@ public class BlinkDetectionHelper {
                             Float rightEyeOpen = face.getRightEyeOpenProbability();
 
                             if (leftEyeOpen != null && rightEyeOpen != null) {
+                                // Check if both eyes are closed (blink)
                                 if (leftEyeOpen < 0.2 && rightEyeOpen < 0.2) {
-                                    if (!blinkDetected) {
+                                    long currentTime = System.currentTimeMillis();
+                                    // Check cooldown to prevent multiple detections
+                                    if (!blinkDetected && (currentTime - lastBlinkTime) > BLINK_COOLDOWN_MS) {
                                         blinkDetected = true;
-                                        handler.post(() -> performBlinkAction());
+                                        lastBlinkTime = currentTime;
+                                        handler.post(this::performBlinkAction);
                                         Log.d("BlinkDetect", "Blink detected!");
-
                                     }
                                 } else {
                                     blinkDetected = false;
@@ -134,7 +140,48 @@ public class BlinkDetectionHelper {
         }
     }
 
-    public void shutdownCameraExecutor() {
-        cameraExecutor.shutdown();
+    public void releaseCamera() {
+        try {
+            if (cameraProvider != null) {
+                cameraProvider.unbindAll();
+                cameraProvider = null;
+            }
+
+            if (imageAnalyzer != null) {
+                imageAnalyzer.clearAnalyzer();
+                imageAnalyzer = null;
+            }
+
+            if (faceDetector != null) {
+                faceDetector.close();
+            }
+        } catch (Exception e) {
+            Log.e("BlinkDetection", "Error releasing camera", e);
+        }
+    }
+
+    public void shutdown() {
+        releaseCamera();
+        if (cameraExecutor != null && !cameraExecutor.isShutdown()) {
+            cameraExecutor.shutdown();
+        }
+        handler.removeCallbacksAndMessages(null);
+    }
+
+    // Add to BlinkDetectionHelper class
+    public boolean isCameraRunning() {
+        return cameraProvider != null;
+    }
+
+    public void pauseDetection() {
+        if (imageAnalyzer != null) {
+            imageAnalyzer.clearAnalyzer();
+        }
+    }
+
+    public void resumeDetection(LifecycleOwner lifecycleOwner) {
+        if (cameraProvider != null && imageAnalyzer != null) {
+            imageAnalyzer.setAnalyzer(cameraExecutor, this::processImage);
+        }
     }
 }
