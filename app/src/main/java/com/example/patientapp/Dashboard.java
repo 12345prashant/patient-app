@@ -108,15 +108,18 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
 
 
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dashboard);
 
+        SharedPreferences prefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        String userEmail = prefs.getString("user_email", null);
+        String patientId = userEmail != null ? userEmail.replace(".", ",") : null;
+
         context = this;
         previewView = findViewById(R.id.previewView);
-        blinkDetectionHelper = new BlinkDetectionHelper(this, previewView, this);
+        blinkDetectionHelper = new BlinkDetectionHelper(this, previewView, this, patientId);
 
 
 
@@ -296,8 +299,10 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
                 request = "Bathroom";
             } else if (v == homeControlCard) {
                 controlLights();
+
             } else if (v == sendMessageCard) {
                 sendCustomMessage();
+
                 return;
             }
 
@@ -599,7 +604,6 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
 //    }
 
 
-
     private void showToast(String message) {
         runOnUiThread(() -> Toast.makeText(Dashboard.this, message, Toast.LENGTH_SHORT).show());
     }
@@ -642,8 +646,6 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
         }
         super.onDestroy();
         blinkDetectionHelper.shutdown();
-
-
 
     }
 }
