@@ -50,10 +50,9 @@ dependencies {
     implementation "androidx.camera:camera-lifecycle:${camerax_version}"
     implementation "androidx.camera:camera-view:${camerax_version}"
     implementation "androidx.camera:camera-extensions:${camerax_version}"
-    implementation "androidx.gridlayout:gridlayout:1.0.0"
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
     implementation("com.google.mlkit:face-detection:16.1.5")
-    implementation("io.agora.rtc:full-sdk:4.2.3")
+//    implementation("io.agora.rtc:full-sdk:4.2.3")
 } 

@@ -6,9 +6,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Looper; // Import Looper
-import android.util.Log; // Import Log
-import android.widget.Toast;
+import android.os.Looper;
+import android.util.Log;
 
 import androidx.camera.view.PreviewView;
 import androidx.recyclerview.widget.LinearLayoutManager;
