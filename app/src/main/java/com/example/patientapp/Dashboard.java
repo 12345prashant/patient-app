@@ -1,5 +1,7 @@
 package com.example.patientapp;
 
+import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
+
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
@@ -57,7 +59,7 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
     private String lastSpokenMessage = "";
 
     private MaterialCardView emergencyCard, waterRequestCard, foodRequestCard,
-            bathroomRequestCard, homeControlCard, sendMessageCard, messageContainer;
+            bathroomRequestCard, homeControlCard, sendMessageCard, messageContainer, chatwithAICard;
     private AnimationDrawable animatedBackground;
     private NestedScrollView scrollView;
     private MaterialToolbar toolbar;
@@ -159,6 +161,8 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
         homeControlCard = findViewById(R.id.homeControlCard);
         sendMessageCard = findViewById(R.id.sendMessageCard);
 
+        chatwithAICard = findViewById(R.id.chatwithAI);
+
         // Initialize toolbar
         toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -201,12 +205,15 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
         cards.add(homeControlCard);
         cards.add(sendMessageCard);
 
+        cards.add(chatwithAICard);
+
         handler.post(highlightRunnable);
 
         // Initialize message views with new IDs
         latestMessage = findViewById(R.id.message);
         notificationIcon = findViewById(R.id.notification_icon);
         msg = findViewById(R.id.msg);
+
 
 
     }
@@ -234,6 +241,8 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
         new Handler().postDelayed(() -> bathroomRequestCard.startAnimation(slideUp), 400);
         new Handler().postDelayed(() -> homeControlCard.startAnimation(slideUp), 500);
         new Handler().postDelayed(() -> sendMessageCard.startAnimation(fadeIn), 600);
+
+        new Handler().postDelayed(() -> chatwithAICard.startAnimation(fadeIn), 600);
 
     }
     public void onBackPressed() {
@@ -271,6 +280,11 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
 
                 return;
             }
+            else if (v== chatwithAICard) {
+                chatwithAI();
+                return;
+            }
+
 
             if (!request.isEmpty()) {
                 sendRequestToCaretaker(getApplicationContext(), request);
@@ -284,6 +298,8 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
         bathroomRequestCard.setOnClickListener(cardClickListener);
         homeControlCard.setOnClickListener(cardClickListener);
         sendMessageCard.setOnClickListener(cardClickListener);
+
+        chatwithAICard.setOnClickListener(cardClickListener);
     }
 
     private void initializeFirebase() {
@@ -307,7 +323,48 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
     private void initializeTextToSpeech() {
         tts = new TextToSpeech(this, status -> {
             if (status == TextToSpeech.SUCCESS) {
-                tts.setLanguage(Locale.US);
+                // Define the Locale for Hindi (India)
+                // Language code "hi", Country code "IN"
+                Locale localeHi = new Locale("hi", "IN");
+
+                // Check if the Hindi language is available (or requires download)
+                int result = tts.isLanguageAvailable(localeHi);
+
+                if (result == TextToSpeech.LANG_MISSING_DATA) {
+                    Log.w(TAG, "TTS: Hindi language data missing. Setting language anyway, system might prompt for download.");
+                    // Attempt to set the language. The system might handle download prompt.
+                    int setResult = tts.setLanguage(localeHi);
+                    if (setResult == TextToSpeech.LANG_MISSING_DATA || setResult == TextToSpeech.LANG_NOT_SUPPORTED) {
+                        Log.e(TAG, "TTS: Failed to set Hindi language after checking (Missing Data or Not Supported). Falling back to default.");
+                        // Optional: Fallback to default or US English if Hindi setup fails
+                        // tts.setLanguage(Locale.getDefault());
+                        // Or inform the user
+                    } else {
+                        Log.i(TAG, "TTS: Hindi language set (data was missing, system might download).");
+                    }
+                } else if (result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    Log.e(TAG, "TTS: Hindi language is not supported on this device/engine.");
+                    // Handle the error: Inform the user, disable TTS features, or fallback
+                    // Optional: Fallback to US English or default
+                    // tts.setLanguage(Locale.US);
+                    // tts.setLanguage(Locale.getDefault());
+                    Toast.makeText(this, "Hindi speech is not supported on this device.", Toast.LENGTH_LONG).show(); // Example user feedback
+                } else {
+                    // Language is available (LANG_AVAILABLE, LANG_COUNTRY_AVAILABLE, LANG_COUNTRY_VAR_AVAILABLE)
+                    int setResult = tts.setLanguage(localeHi);
+                    if (setResult == TextToSpeech.LANG_MISSING_DATA || setResult == TextToSpeech.LANG_NOT_SUPPORTED) {
+                        // This case shouldn't ideally happen if isLanguageAvailable passed, but check anyway
+                        Log.e(TAG, "TTS: Failed to set Hindi language even though it seemed available. Result: " + setResult);
+                    } else {
+                        Log.i(TAG, "TTS: Hindi language successfully set.");
+                    }
+                }
+            } else {
+                // Initialization failed
+                Log.e(TAG, "TTS Initialization failed! Status: " + status);
+                Toast.makeText(this, "Text-to-Speech initialization failed.", Toast.LENGTH_SHORT).show(); // Example user feedback
+                // Handle TTS initialization failure (e.g., disable related features)
+                tts = null; // Ensure tts is null if init failed
             }
         });
     }
@@ -373,6 +430,19 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
         } catch (android.content.ActivityNotFoundException e) {
             e.printStackTrace();
             Toast.makeText(context, "Send Message activity not found.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void chatwithAI(){
+
+        Intent intent = new Intent(context, AskForLanguageChatWithAI.class);
+
+        try {
+            context.startActivity(intent);
+            finish();
+        } catch (android.content.ActivityNotFoundException e) {
+            e.printStackTrace();
+            Toast.makeText(context, "Chat with AI activity not found.", Toast.LENGTH_SHORT).show();
         }
     }
 

@@ -33,4 +33,7 @@
 
     <color name="gray">#808080</color>
     <color name="surface_variant">#FFE7E0D8</color>
+    <color name="selected_row">#40FF4080</color>
+    <color name="selected_key">#8040FF40</color>
+    <color name="outline">#8040FF40</color>
 </resources>

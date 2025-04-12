@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="KeyboardKey">
+        <item name="android:gravity">center</item>
+        <item name="android:textSize">20sp</item>
+        <item name="android:background">@drawable/key_background</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:layout_margin">2dp</item>
+    </style>
+    <style name="PredictionButton">
+        <item name="android:gravity">center</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:background">@drawable/prediction_bg</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:layout_margin">4dp</item>
+        <item name="android:padding">8dp</item>
+    </style>
+</resources>

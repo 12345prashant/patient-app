@@ -15,6 +15,7 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
     }
 
     buildTypes {
@@ -54,5 +55,7 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
     implementation("com.google.mlkit:face-detection:16.1.5")
-//    implementation("io.agora.rtc:full-sdk:4.2.3")
+    implementation("com.google.ai.client.generativeai:generativeai:0.1.2")
+    implementation("com.google.guava:guava:31.1-android")
+
 } 

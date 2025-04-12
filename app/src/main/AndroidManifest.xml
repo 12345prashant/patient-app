@@ -84,6 +84,15 @@
             android:exported="true"/>
 
 
+        <activity
+            android:name=".ChatWithAI"
+            android:exported="true"/>
+        <activity
+            android:name=".AskForLanguageChatWithAI"
+            android:exported="true"/>
+
+
+
     </application>
 
 </manifest>

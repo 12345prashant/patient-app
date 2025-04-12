@@ -319,10 +319,51 @@
 
             </com.google.android.material.card.MaterialCardView>
 
+
+
+            <!-- Chat with AI message card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/chatwithAI"
+                style="@style/Widget.PatientApp.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clickable="true"
+                android:focusable="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="24dp">
+
+                    <ImageView
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:src="@drawable/ic_message"
+                        app:tint="@color/accent" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginStart="16dp"
+                        android:text="Chat with AI"
+                        android:textAppearance="@style/TextAppearance.PatientApp.Headline2" />
+
+                    <TextView
+                        android:id="@+id/realtimechatwithAI"
+                        android:layout_width="50dp"
+                        android:layout_height="50dp" />
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
         </LinearLayout>
 
 
 
     </androidx.core.widget.NestedScrollView>
+
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
