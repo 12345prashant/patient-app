@@ -1,7 +1,12 @@
 package com.example.patientapp; // Use your actual package name
 
+import android.Manifest;
 import android.animation.ObjectAnimator;
 import android.animation.PropertyValuesHolder;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -9,6 +14,7 @@ import android.util.Log;
 import android.view.Gravity; // Correct import for Gravity
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -16,6 +22,8 @@ import android.widget.Toast; // For showing error messages
 import android.speech.tts.TextToSpeech;
 import androidx.annotation.NonNull; // Import for NonNull
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.camera.view.PreviewView;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 // Imports for Gemini SDK
@@ -40,10 +48,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import com.google.android.material.card.MaterialCardView;
+import android.view.LayoutInflater;
 
-public class ChatWithAI extends AppCompatActivity {
+public class ChatWithAI extends AppCompatActivity implements BlinkDetectionHelper.BlinkListener{
 
     private static final String TAG = "ChatWithAI_DEBUG"; // Tag for logging
+    private Context context;
 
     // UI Elements
     private Button chatButton; // Consider removing or repurposing this button
@@ -67,10 +78,36 @@ public class ChatWithAI extends AppCompatActivity {
     private final String[] ERROR_PROMPTS = {"Try again", "Hello", "I need help"};
     private final String[] DEFAULT_RESPONSE_OPTIONS = {"Continue", "Tell me more", "Thanks"};
 
+    private Handler handler1 = new Handler();
+
+    private MaterialCardView cardprompt1, cardprompt2, cardprompt3;
+    private List<MaterialCardView> cards;
+    private PreviewView previewView;
+    private int highlightedIndex = 0;
+    private BlinkDetectionHelper blinkDetectionHelper;
+
+    private static final int PERMISSION_REQ_ID = 22;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat_with_ai);
+
+        SharedPreferences prefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        String userEmail = prefs.getString("user_email", null);
+        String patientId = userEmail != null ? userEmail.replace(".", ",") : null;
+
+        context = this;
+        previewView = findViewById(R.id.previewView);
+        blinkDetectionHelper = new BlinkDetectionHelper(this, previewView, this, patientId);
+        if (checkPermissions()) {
+
+//            startVideoCalling();
+            blinkDetectionHelper.startCamera(this);
+        } else {
+            requestPermissions();
+        }
+
         String selectedLanguage = getIntent().getStringExtra("selected_language");
         if ("English".equals(selectedLanguage)) {
             initializeTextToSpeechEnglish();
@@ -142,6 +179,43 @@ public class ChatWithAI extends AppCompatActivity {
             // addMessage("Patient", "Started chat with AI", false); // Original action
         });
     }
+
+    private void requestPermissions() {
+        ActivityCompat.requestPermissions(this, getRequiredPermissions(), PERMISSION_REQ_ID);
+    }
+    private boolean checkPermissions() {
+        for (String permission : getRequiredPermissions()) {
+            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+                return false;
+            }
+        }
+        return true;
+    }
+    private String[] getRequiredPermissions() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            return new String[]{
+                    android.Manifest.permission.RECORD_AUDIO,
+                    android.Manifest.permission.CAMERA,
+                    android.Manifest.permission.READ_PHONE_STATE,
+                    android.Manifest.permission.BLUETOOTH_CONNECT
+            };
+        } else {
+            return new String[]{
+                    android.Manifest.permission.RECORD_AUDIO,
+                    Manifest.permission.CAMERA
+            };
+        }
+    }
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == PERMISSION_REQ_ID && checkPermissions()) {
+
+//            startVideoCalling();
+            blinkDetectionHelper.startCamera(this);
+        }
+    }
+
     private void initializeTextToSpeechEnglish() {
 
         tts = new TextToSpeech(this, status -> {
@@ -233,54 +307,149 @@ public class ChatWithAI extends AppCompatActivity {
     // --- UI Update Methods (Ensure they run on Main Thread) ---
 
     private void updatePrompts(final String[] prompts) {
-        // Use handler to ensure UI modification happens on the main thread
         mainThreadHandler.post(() -> {
             Log.d(TAG, "Updating prompts on Main Thread");
-            promptContainer.removeAllViews(); // This is safe now
+            promptContainer.removeAllViews();
             currentPrompts.clear();
+            MaterialCardView exitCard = (MaterialCardView) LayoutInflater.from(this)
+                    .inflate(R.layout.prompt_card, promptContainer, false);
+
+            TextView exitText = exitCard.findViewById(R.id.promptText);
+//            ImageView exitIcon = exitCard.findViewById(R.id.promptIcon);
+
+            exitText.setText("Exit");
+            exitText.setTextColor(ContextCompat.getColor(this, android.R.color.holo_red_dark));
+//            exitIcon.setImageResource(android.R.drawable.ic_menu_close_clear_cancel);
+//            exitIcon.setColorFilter(ContextCompat.getColor(this, android.R.color.holo_red_dark));
+
+            exitCard.setOnClickListener(v -> {
+                // Redirect to Dashboard
+                startActivity(new Intent(this, Dashboard.class));
+                finish();
+            });
+
+            promptContainer.addView(exitCard);
+
             if (prompts == null || prompts.length == 0) {
                 Log.w(TAG, "updatePrompts called with no prompts.");
-                // Optionally add a default message or state indicator
-                // TextView noPromptsView = new TextView(this);
-                // noPromptsView.setText("No further actions available.");
-                // promptContainer.addView(noPromptsView);
                 return;
             }
 
             currentPrompts.addAll(Arrays.asList(prompts));
 
+            LayoutInflater inflater = LayoutInflater.from(this);
+            cards = new ArrayList<>();
+            cards.add(exitCard);
             for (String prompt : currentPrompts) {
                 if (prompt == null || prompt.trim().isEmpty()) continue;
 
-                Button promptButton = new Button(this);
-                promptButton.setText(prompt.trim());
-                // It's better practice to define styles/drawables in XML
-                promptButton.setBackgroundResource(R.drawable.prompt_button); // Ensure drawable exists
-                promptButton.setTextColor(ContextCompat.getColor(this, android.R.color.white));
-                promptButton.setAllCaps(false);
+                // Inflate the card layout
+                MaterialCardView card = (MaterialCardView) inflater.inflate(
+                        R.layout.prompt_card,
+                        promptContainer,
+                        false
+                );
+                cards.add(card);
 
-                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT);
-                params.setMargins(16, 8, 16, 8); // Added horizontal margins
-                promptButton.setLayoutParams(params);
-                promptButton.setPadding(24, 16, 24, 16); // Adjust padding
+                // Set up the card content
+                TextView promptText = card.findViewById(R.id.promptText);
+                promptText.setText(prompt.trim());
 
-                promptButton.setOnClickListener(v -> {
-                    if (model == null) { // Check if model is available
+
+                // Set click listener
+                card.setOnClickListener(v -> {
+                    if (model == null) {
                         Toast.makeText(this, "AI Model not available.", Toast.LENGTH_SHORT).show();
                         return;
                     }
-                    String selectedPrompt = ((Button) v).getText().toString();
+                    String selectedPrompt = promptText.getText().toString();
                     addMessage("You", selectedPrompt, false);
-                    setPromptButtonsEnabled(false); // Disable buttons while processing
+                    setPromptCardsEnabled(false);
                     processUserInput(selectedPrompt);
                 });
 
-                promptContainer.addView(promptButton);
+                promptContainer.addView(card);
+                cards.add(card);
             }
-            // Ensure buttons are enabled after update (might be disabled from error)
-            setPromptButtonsEnabled(true);
+            handler1.post(highlightRunnable);
+            setPromptCardsEnabled(true);
+        });
+    }
+    private void highlightCard(MaterialCardView card, boolean highlight) {
+        if (highlight) {
+            // Highlight the card (e.g., change background color or stroke color)
+            card.setCardBackgroundColor(ContextCompat.getColor(this, R.color.warning)); // Use a highlight color
+            card.setStrokeWidth(4); // Add a border
+            card.setStrokeColor(ContextCompat.getColor(this, R.color.warning)); // Use a stroke color
+        } else {
+            // Reset the card to its original state
+            card.setCardBackgroundColor(ContextCompat.getColor(this, R.color.white)); // Use the default card color
+            card.setStrokeWidth(0); // Remove the border
+        }
+    }
+
+    private Runnable highlightRunnable = new Runnable() {
+        @Override
+        public void run() {
+            // Reset all cards to their default state
+            resetAllCards(cards);
+
+            // Move to the next card
+            highlightedIndex = (highlightedIndex + 1) % cards.size();
+            // Highlight the current card
+            highlightCard(cards.get(highlightedIndex), true);
+
+
+
+            // Repeat after a delay (e.g., 3 seconds)
+            handler1.postDelayed(this, 3000); // 3000ms = 3 seconds
+        }
+    };
+
+    private void resetAllCards(List<MaterialCardView> cards) {
+        for (MaterialCardView card : cards) {
+            highlightCard(card, false);
+        }
+    }
+    @Override
+    public void onBlinkDetected() {
+        cards.get(highlightedIndex).performClick();
+    }
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (blinkDetectionHelper != null) {
+            // Only pause detection if we're not finishing
+            if (!isFinishing()) {
+                blinkDetectionHelper.pauseDetection();
+            } else {
+                blinkDetectionHelper.shutdown();
+            }
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (checkPermissions() && blinkDetectionHelper != null) {
+            if (!blinkDetectionHelper.isCameraRunning()) {
+                blinkDetectionHelper.startCamera(this);
+            } else {
+                blinkDetectionHelper.resumeDetection(this);
+            }
+        }
+    }
+
+    private void setPromptCardsEnabled(final boolean enabled) {
+        mainThreadHandler.post(() -> {
+            Log.d(TAG, "Setting prompt cards enabled: " + enabled + " on Main Thread");
+            for (int i = 0; i < promptContainer.getChildCount(); i++) {
+                View child = promptContainer.getChildAt(i);
+                if (child instanceof MaterialCardView) {
+                    child.setEnabled(enabled);
+                    child.setAlpha(enabled ? 1.0f : 0.5f);
+                }
+            }
         });
     }
 
@@ -483,6 +652,7 @@ public class ChatWithAI extends AppCompatActivity {
             tts.shutdown();
         }
         super.onDestroy();
+        blinkDetectionHelper.shutdown();
 
 
     }

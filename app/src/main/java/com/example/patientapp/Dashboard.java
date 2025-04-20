@@ -67,6 +67,7 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
     private List<MaterialCardView> cards;
     private PreviewView previewView;
 
+
 //    private static final int CAMERA_REQUEST_CODE = 100;
 
     private int highlightedIndex = 0;
@@ -626,6 +627,7 @@ public class Dashboard extends AppCompatActivity implements BlinkDetectionHelper
             highlightCard(card, false);
         }
     }
+
 
 //    @Override
 //    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {

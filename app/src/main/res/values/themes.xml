@@ -69,4 +69,6 @@
         <item name="contentPadding">16dp</item>
         <item name="cardBackgroundColor">@color/card_background</item>
     </style>
+
+
 </resources>

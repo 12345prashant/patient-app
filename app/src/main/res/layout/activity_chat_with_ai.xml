@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -24,7 +25,15 @@
             android:padding="8dp"/>
     </ScrollView>
 
-    <!-- Prompt buttons container -->
+    <androidx.camera.view.PreviewView
+        android:id="@+id/previewView"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_centerInParent="true"
+        android:visibility="invisible"
+        android:background="@android:color/black"/>
+
+    <!-- Prompt cards container -->
     <LinearLayout
         android:id="@+id/prompt_container"
         android:layout_width="match_parent"
@@ -36,12 +45,12 @@
     <!-- Top container with chat button -->
     <LinearLayout
         android:id="@+id/top_container"
-        android:layout_width="match_parent"
-        android:layout_height="300dp"
+        android:layout_width="377dp"
+        android:layout_height="245dp"
         android:layout_marginTop="32dp"
-        android:orientation="vertical"
-        android:gravity="center"
         android:background="@drawable/rounded_rectangle"
+        android:gravity="center"
+        android:orientation="vertical"
         android:padding="16dp">
 
         <!-- Pulsating Chat Button -->
@@ -49,12 +58,12 @@
             android:id="@+id/chat_with_ai_button"
             android:layout_width="100dp"
             android:layout_height="100dp"
-            android:text="CHAT\nWITH\nAI"
-            android:textSize="14sp"
-            android:textColor="#FFFFFF"
-            android:gravity="center"
             android:background="@drawable/animated_circle_button"
-            android:elevation="6dp"/>
+            android:elevation="6dp"
+            android:gravity="center"
+            android:text="CHAT\nWITH\nAI"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp" />
     </LinearLayout>
 
 </RelativeLayout>
